@@ -1,15 +1,18 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
 
 namespace Switchie
 {
-
     public class WindowManager
     {
-        static List<IntPtr> hWndBlacklist = new List<IntPtr>();
+        static readonly List<IntPtr> hWndBlacklist = new List<IntPtr>();
+        static readonly string[] classBlacklist = new string[] {
+             "Windows.UI.Core.CoreWindow" // Start menu
+        };
 
         static int GetWindowZOrder(IntPtr hWnd)
         {
@@ -20,37 +23,39 @@ namespace Switchie
 
         public static List<Window> GetOpenWindows()
         {
-            List<Window> rv = new List<Window>();
-            IntPtr shellWindow = WinAPI.GetShellWindow();
-            string[] classBlacklist = new string[] {
-                "Windows.UI.Core.CoreWindow"
-            };
+            var windowList = new List<Window>();
+            var shellWindow = WinAPI.GetShellWindow();
 
             WinAPI.EnumWindows((IntPtr hWnd, int lParam) =>
             {
-                if (hWndBlacklist.Contains(hWnd)) return true;
+                // Ignore specific windows
                 if (hWnd == shellWindow) return true;
                 if (!WinAPI.IsWindowVisible(hWnd)) return true;
 
                 int length = WinAPI.GetWindowTextLength(hWnd);
+
                 if (length == 0) return true;
+                if (hWndBlacklist.Contains(hWnd)) return true;
 
-                StringBuilder builder = new StringBuilder(length);
-                WinAPI.GetWindowText(hWnd, builder, length + 1);
-
-                WinAPI.RECT rct = new WinAPI.RECT();
-                WinAPI.GetWindowRect(hWnd, ref rct);
-
-                IntPtr nRet;
-                StringBuilder className = new StringBuilder(256);
-                nRet = WinAPI.GetClassName(hWnd, className, className.Capacity);
+                var className = new StringBuilder(256);
+                IntPtr nRet = WinAPI.GetClassName(hWnd, className, className.Capacity);
                 if (classBlacklist.Contains(className.ToString())) return true;
 
+                // Get required window data
+                var titleBuilder = new StringBuilder(length);
+                WinAPI.GetWindowText(hWnd, titleBuilder, length + 1);
+
+                var rect = new WinAPI.RECT();
+                WinAPI.GetWindowRect(hWnd, ref rect);
+
+                // Get virtual desktop index
                 int index = 0;
                 WinAPI.GetWindowThreadProcessId(hWnd, out uint pid);
                 try { index = WindowsVirtualDesktopManager.GetInstance().FromDesktop(WindowsVirtualDesktopManager.GetInstance().FromWindow((IntPtr)hWnd)); }
                 catch
                 {
+                    // Note: This is where Exception thrown: 'System.Runtime.InteropServices.COMException' comes from
+                    // All windows where this happens are getting blacklisted
                     hWndBlacklist.Add(hWnd);
                     return true;
                 }
@@ -60,23 +65,24 @@ namespace Switchie
                 if (hIcon == 0) { hIcon = WinAPI.GetClassLongPtr(hWnd, WinAPI.GCL_HICON); }
                 if (hIcon == 0) { hIcon = WinAPI.LoadIcon(IntPtr.Zero, (IntPtr)WinAPI.IDI_APPLICATION); }
 
-                rv.Add(new Window()
+                windowList.Add(new Window()
                 {
                     Handle = hWnd,
-                    Title = builder.ToString(),
+                    Title = titleBuilder.ToString(),
                     ProcessID = pid,
                     Class = className.ToString(),
                     ZOrder = GetWindowZOrder(hWnd),
                     Icon = hIcon != 0 ? new Bitmap(Icon.FromHandle((IntPtr)hIcon).ToBitmap(), 16, 16) : null,
                     IsActive = hWnd == WinAPI.GetForegroundWindow(),
-                    Dimensions = new Rectangle(rct.Left, rct.Top, rct.Right - rct.Left, rct.Bottom - rct.Top),
+                    Dimensions = new Rectangle(rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top),
                     VirtualDesktopIndex = index
                 });
 
                 return true;
             }, 0);
 
-            return rv;
+            windowList.Sort((x, y) => x.ProcessID.CompareTo(y.ProcessID));
+            return windowList;
         }
 
         public static Window GetActiveWindow()
@@ -85,6 +91,11 @@ namespace Switchie
             return GetOpenWindows().SingleOrDefault(x => x.Handle == hwnd);
         }
 
-        public static void SetAlwaysOnTop(IntPtr handle, bool value) => WinAPI.SetWindowPos(handle, value ? WinAPI.HWND_TOPMOST : WinAPI.HWND_NOTOPMOST, 0, 0, 0, 0, WinAPI.SWP_NOMOVE | WinAPI.SWP_NOSIZE | WinAPI.SWP_SHOWWINDOW);
+        public static void SetAlwaysOnTop(IntPtr handle, bool value)
+        {
+            WinAPI.SetWindowPos(handle, value ? WinAPI.HWND_TOPMOST : WinAPI.HWND_NOTOPMOST,
+                0, 0, 0, 0, WinAPI.SWP_NOMOVE | WinAPI.SWP_NOSIZE | WinAPI.SWP_SHOWWINDOW
+            );
+        }
     }
 }

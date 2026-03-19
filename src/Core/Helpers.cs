@@ -6,7 +6,6 @@ using System.Windows.Forms;
 
 namespace Switchie
 {
-
     public class Helpers
     {
         public static byte[] GetResourceFromAssembly(Type type, string name)

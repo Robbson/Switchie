@@ -1,7 +1,6 @@
 using System;
 namespace Switchie
 {
-
     public class WindowsVirtualDesktop
     {
         private static IWindowsVirtualDesktop _instance;

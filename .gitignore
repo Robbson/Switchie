@@ -1,3 +1,6 @@
 bin/
 obj/
 prod/
+.vs/
+*.sln
+*.csproj.user

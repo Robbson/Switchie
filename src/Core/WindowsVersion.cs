@@ -1,6 +1,5 @@
 namespace Switchie
 {
-
     public class WindowsVersion
     {
         public int Major { get; set; }
@@ -25,5 +24,4 @@ namespace Switchie
         public bool IsWin10() => Major == 10 && Minor == 0 && Build > 17763 && Build < 22000;
         public bool IsWin10LTSC() => Major == 10 && Minor == 0 && Build <= 17763;
     }
-
 }
