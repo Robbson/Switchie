@@ -3,8 +3,8 @@
 
 ## Bugs
 
-- Get it to work on more recent Windows 11 versions
-- Potential crash when the render target is gone (can happen on remote desktops)
+- Icons render mode also shows minimzed windows
+- Potential crash when the render target is gone (can happen on remote desktops, probably otherwise hard to recreate)
 - Clicking on windows in Icons render mode doesn't work reliably when an application has more than one window
 
 

@@ -154,19 +154,19 @@ namespace Switchie.VirtualDesktopAPI.Win11
 
         [ComImport]
         [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-        [Guid("B2F925B9-5A0F-4D2E-9F4D-2B1507593C10")]
+        [Guid("53F5CA0B-158F-4124-900C-057158060B27")]
         public interface IVirtualDesktopManagerInternal
         {
-            int GetCount(IntPtr hWndOrMon);
+            int GetCount();
             void MoveViewToDesktop(IApplicationView view, IVirtualDesktop desktop);
             bool CanViewMoveDesktops(IApplicationView view);
-            IVirtualDesktop GetCurrentDesktop(IntPtr hWndOrMon);
-            void GetDesktops(IntPtr hWndOrMon, out IObjectArray desktops);
+            IVirtualDesktop GetCurrentDesktop();
+            void GetDesktops(out IObjectArray desktops);
             [PreserveSig]
             int GetAdjacentDesktop(IVirtualDesktop from, int direction, out IVirtualDesktop desktop);
-            void SwitchDesktop(IntPtr hWndOrMon, IVirtualDesktop desktop);
-            IVirtualDesktop CreateDesktop(IntPtr hWndOrMon);
-            void MoveDesktop(IVirtualDesktop desktop, IntPtr hWndOrMon, int nIndex);
+            void SwitchDesktop(IVirtualDesktop desktop);
+            IVirtualDesktop CreateDesktop();
+            void MoveDesktop(IVirtualDesktop desktop, int nIndex);
             void RemoveDesktop(IVirtualDesktop desktop, IVirtualDesktop fallback);
             IVirtualDesktop FindDesktop(ref Guid desktopid);
             void GetDesktopSwitchIncludeExcludeViews(IVirtualDesktop desktop, out IObjectArray unknown1, out IObjectArray unknown2);
@@ -174,8 +174,11 @@ namespace Switchie.VirtualDesktopAPI.Win11
             void SetDesktopWallpaper(IVirtualDesktop desktop, [MarshalAs(UnmanagedType.HString)] string path);
             void UpdateWallpaperPathForAllDesktops([MarshalAs(UnmanagedType.HString)] string path);
             void CopyDesktopState(IApplicationView pView0, IApplicationView pView1);
-            int GetDesktopIsPerMonitor();
-            void SetDesktopIsPerMonitor(bool state);
+            void CreateRemoteDesktop([MarshalAs(UnmanagedType.HString)] string path, out IVirtualDesktop desktop);
+            void SwitchRemoteDesktop(IVirtualDesktop desktop, IntPtr switchtype);
+            void SwitchDesktopWithAnimation(IVirtualDesktop desktop);
+            void GetLastActiveDesktop(out IVirtualDesktop desktop);
+            void WaitForAnimationToComplete();
         }
 
         [ComImport]
@@ -190,16 +193,16 @@ namespace Switchie.VirtualDesktopAPI.Win11
 
         [ComImport]
         [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-        [Guid("536D3495-B208-4CC9-AE26-DE8111275BF8")]
+        [Guid("3F07F4BE-B107-441A-AF0F-39D82529072C")]
         public interface IVirtualDesktop : IIVirtualDesktop
         {
             bool IsViewVisible(IApplicationView view);
             Guid GetId();
-            IntPtr Unknown1();
             [return: MarshalAs(UnmanagedType.HString)]
             string GetName();
             [return: MarshalAs(UnmanagedType.HString)]
             string GetWallpaperPath();
+            bool IsRemote();
         }
     }
 
@@ -212,17 +215,17 @@ namespace Switchie.VirtualDesktopAPI.Win11
         public IIVirtualDesktop ivd { get; set; }
         public WindowsVirtualDesktop() { }
         public WindowsVirtualDesktop(IIVirtualDesktop desktop) { this.ivd = desktop; }
-        public void MakeVisible() => _windowsVirtualDesktopManager.VirtualDesktopManagerInternal.SwitchDesktop(IntPtr.Zero, (WindowsVirtualDesktopAPI.IVirtualDesktop)ivd);
+        public void MakeVisible() => _windowsVirtualDesktopManager.VirtualDesktopManagerInternal.SwitchDesktop((WindowsVirtualDesktopAPI.IVirtualDesktop)ivd);
         public IWindowsVirtualDesktop FromIndex(int index) => new WindowsVirtualDesktop(_windowsVirtualDesktopManager.GetDesktop(index));
 
         public int Count
         {
-            get => _windowsVirtualDesktopManager.VirtualDesktopManagerInternal.GetCount(IntPtr.Zero);
+            get => _windowsVirtualDesktopManager.VirtualDesktopManagerInternal.GetCount();
         }
 
         public IWindowsVirtualDesktop Current
         {
-            get => new WindowsVirtualDesktop((IIVirtualDesktop)_windowsVirtualDesktopManager.VirtualDesktopManagerInternal.GetCurrentDesktop(IntPtr.Zero));
+            get => new WindowsVirtualDesktop((IIVirtualDesktop)_windowsVirtualDesktopManager.VirtualDesktopManagerInternal.GetCurrentDesktop());
         }
 
         public void MoveWindow(IntPtr hWnd)
@@ -277,10 +280,10 @@ namespace Switchie.VirtualDesktopAPI.Win11
 
         public WindowsVirtualDesktopAPI.IVirtualDesktop GetDesktop(int index)
         {
-            int count = VirtualDesktopManagerInternal.GetCount(IntPtr.Zero);
+            int count = VirtualDesktopManagerInternal.GetCount();
             if (index < 0 || index >= count) throw new ArgumentOutOfRangeException("index");
             WindowsVirtualDesktopAPI.IObjectArray desktops;
-            VirtualDesktopManagerInternal.GetDesktops(IntPtr.Zero, out desktops);
+            VirtualDesktopManagerInternal.GetDesktops(out desktops);
             object objdesktop;
             desktops.GetAt(index, typeof(WindowsVirtualDesktopAPI.IVirtualDesktop).GUID, out objdesktop);
             Marshal.ReleaseComObject(desktops);
@@ -291,8 +294,8 @@ namespace Switchie.VirtualDesktopAPI.Win11
         {
             int index = -1;
             Guid IdSearch = desktop.GetId();
-            VirtualDesktopManagerInternal.GetDesktops(IntPtr.Zero, out WindowsVirtualDesktopAPI.IObjectArray desktops);
-            for (int i = 0; i < VirtualDesktopManagerInternal.GetCount(IntPtr.Zero); i++)
+            VirtualDesktopManagerInternal.GetDesktops(out WindowsVirtualDesktopAPI.IObjectArray desktops);
+            for (int i = 0; i < VirtualDesktopManagerInternal.GetCount(); i++)
             {
                 desktops.GetAt(i, typeof(WindowsVirtualDesktopAPI.IVirtualDesktop).GUID, out object objdesktop);
                 if (IdSearch.CompareTo(((WindowsVirtualDesktopAPI.IVirtualDesktop)objdesktop).GetId()) == 0)
