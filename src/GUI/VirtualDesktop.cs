@@ -117,20 +117,12 @@ namespace Switchie
                 var w = GetWindowUnderCursor(e.Location);
                 if (w != null)
                 {
-                    // Bring a window into front by clicking on its miniature
-                    // -> doesn't work yet for the alternative mode, probably because of GetWindowUnderCursor() 
+                    // Bring a window into front by clicking on its miniature / icon
+                    // -> only when it's already the active desktop, which makes desktop switches smoother
+                    //    without touching the last window z-order
                     if (IsCurrentActiveDesktop)
                     {
                         WinAPI.SetForegroundWindow(w.Handle);
-                    }
-                    else
-                    {
-                        // If we come from another desktop we delay the activation so the desktop change can be applied before
-                        // (otherwise we would scroll to the target desktop first)
-                        Task.Delay(300).ContinueWith(_ =>
-                        {
-                            WinAPI.SetForegroundWindow(w.Handle);
-                        });
                     }
 
                     _dragDropData = new DragDropData()

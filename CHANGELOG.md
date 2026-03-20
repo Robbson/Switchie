@@ -1,6 +1,13 @@
 # Switchie Changelog
 
 
+## v1.3.3
+
+Changes:
+- no longer allow mouse clicks to bring windows from another desktop to foreground
+- Added tooltips / infos in the settings dialog for some of the settings which need an explanation
+
+
 ## v1.3.2
 
 New features:

@@ -15,7 +15,7 @@ namespace Switchie
     // Pager main application form
     public class MainForm : Form
     {
-        private string version = "1.3.2";
+        private string version = "1.3.3";
 
         // --- Internal Application State ---
         private bool _isAppPinned = false;
