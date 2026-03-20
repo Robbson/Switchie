@@ -7,6 +7,9 @@ namespace Switchie
         public int RenderMode { get; set; } = 0;
         public int DesktopBorderStyle { get; set; } = 0;
         public int PagerHeight { get; set; } = 40;
+        public int PaddingSize { get; set; } = 1;
+        public int IconPaddingX { get; set; } = 0;
+        public int IconPaddingY { get; set; } = 0;
 
         public Color BackgroundColor { get; set; } = Color.FromArgb(64, 64, 64);
 

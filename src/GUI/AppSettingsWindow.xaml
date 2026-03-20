@@ -34,12 +34,39 @@
                                 <Button x:Name="btnRevertRenderMode" Grid.Row="0" Grid.Column="2" Width="28" Height="24" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertRenderMode_Click" />
 
                                 <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center">Pager Height</TextBlock>
-                                <TextBox x:Name="txtPagerHeight" Grid.Row="1" Grid.Column="1" Margin="8,2,0,2" TextChanged="TextInputChanged" />
+                                <TextBox x:Name="txtPagerHeight" Grid.Row="1" Grid.Column="1" Margin="8,2,0,2" Padding="3" TextChanged="TextInputChanged" />
                                 <Button x:Name="btnRevertPagerHeight" Grid.Row="1" Grid.Column="2" Width="28" Height="24" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertPagerHeight_Click" />
 
                                 <TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Center">Desktop Border Style</TextBlock>
                                 <ComboBox x:Name="cmbDesktopBorderStyle" Grid.Row="2" Grid.Column="1" Margin="8,2,0,2" SelectionChanged="RenderModeChanged" />
                                 <Button x:Name="btnRevertDesktopBorderStyle" Grid.Row="2" Grid.Column="2" Width="28" Height="24" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertDesktopBorderStyle_Click" />
+                            </Grid>
+                        </GroupBox>
+
+                        <GroupBox Header="Icons Settings" Margin="0,0,0,10">
+                            <Grid Margin="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="220" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="36" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center">Padding Size</TextBlock>
+                                <TextBox x:Name="txtPaddingSize" Grid.Row="0" Grid.Column="1" Margin="8,2,0,2" Padding="3" TextChanged="TextInputChanged" />
+                                <Button x:Name="btnRevertPaddingSize" Grid.Row="0" Grid.Column="2" Width="28" Height="24" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertPaddingSize_Click" />
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center">Icon Padding X</TextBlock>
+                                <TextBox x:Name="txtIconPaddingX" Grid.Row="1" Grid.Column="1" Margin="8,2,0,2" Padding="3" TextChanged="TextInputChanged" />
+                                <Button x:Name="btnRevertIconPaddingX" Grid.Row="1" Grid.Column="2" Width="28" Height="24" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertIconPaddingX_Click" />
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Center">Icon Padding Y</TextBlock>
+                                <TextBox x:Name="txtIconPaddingY" Grid.Row="2" Grid.Column="1" Margin="8,2,0,2" Padding="3" TextChanged="TextInputChanged" />
+                                <Button x:Name="btnRevertIconPaddingY" Grid.Row="2" Grid.Column="2" Width="28" Height="24" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertIconPaddingY_Click" />
                             </Grid>
                         </GroupBox>
                     </StackPanel>
@@ -63,19 +90,19 @@
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
 
-                                <TextBlock Grid.Column="0" VerticalAlignment="Center" Height="16">Background</TextBlock>
-                                <Border x:Name="previewBackgroundColor" Grid.Row="0" Grid.Column="1" Margin="8,2,2,2" Width="32" HorizontalAlignment="Left" BorderThickness="1" BorderBrush="Gray" Grid.ColumnSpan="2" />
-                                <Button Grid.Row="0" Grid.Column="2" Margin="0,2,0,2" Content="Choose..." Click="ChooseBackgroundColor_Click" />
+                                <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center">Background</TextBlock>
+                                <Border x:Name="previewBackgroundColor" Grid.Row="0" Grid.Column="1" Margin="8,2,0,2" Width="32" HorizontalAlignment="Left" BorderThickness="1" BorderBrush="Gray" Grid.ColumnSpan="2" />
+                                <Button Grid.Row="0" Grid.Column="2" Margin="0,2,0,2" Height="24" Content="Choose..." Click="ChooseBackgroundColor_Click" />
                                 <Button x:Name="btnRevertBackgroundColor" Grid.Row="0" Grid.Column="3" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertBackgroundColor_Click" />
 
                                 <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Height="16">Desktop Border</TextBlock>
                                 <Border x:Name="previewDesktopColor" Grid.Row="1" Grid.Column="1" Margin="8,2,0,2" Width="32" HorizontalAlignment="Left" BorderThickness="1" BorderBrush="Gray" Grid.ColumnSpan="2" />
-                                <Button Grid.Row="1" Grid.Column="2" Margin="0,2,0,2" Content="Choose..." Click="ChooseDesktopColor_Click" />
+                                <Button Grid.Row="1" Grid.Column="2" Margin="0,2,0,2" Height="24" Content="Choose..." Click="ChooseDesktopColor_Click" />
                                 <Button x:Name="btnRevertDesktopColor" Grid.Row="1" Grid.Column="3" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertDesktopColor_Click" />
 
                                 <TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" Height="16">Desktop Border (Active)</TextBlock>
                                 <Border x:Name="previewActiveDesktopBorderColor" Grid.Row="2" Grid.Column="1" Margin="8,2,0,2" Width="32" HorizontalAlignment="Left" BorderThickness="1" BorderBrush="Gray" Grid.ColumnSpan="2" />
-                                <Button Grid.Row="2" Grid.Column="2" Margin="0,2,0,2" Content="Choose..." Click="ChooseActiveDesktopBorderColor_Click" />
+                                <Button Grid.Row="2" Grid.Column="2" Margin="0,2,0,2" Height="24" Content="Choose..." Click="ChooseActiveDesktopBorderColor_Click" />
                                 <Button x:Name="btnRevertActiveDesktopBorderColor" Grid.Row="2" Grid.Column="3" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertActiveDesktopBorderColor_Click" />
                             </Grid>
                         </GroupBox>
@@ -97,22 +124,22 @@
 
                                 <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Height="16">Window</TextBlock>
                                 <Border x:Name="previewWindowColor" Grid.Row="0" Grid.Column="1" Margin="8,2,0,2" Width="32" HorizontalAlignment="Left" BorderThickness="1" BorderBrush="Gray" Grid.ColumnSpan="2" />
-                                <Button Grid.Row="0" Grid.Column="2" Margin="0,2,0,2" Content="Choose..." Click="ChooseWindowColor_Click" />
+                                <Button Grid.Row="0" Grid.Column="2" Margin="0,2,0,2" Height="24" Content="Choose..." Click="ChooseWindowColor_Click" />
                                 <Button x:Name="btnRevertWindowColor" Grid.Row="0" Grid.Column="3" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertWindowColor_Click" />
 
                                 <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Height="16">Window (Active)</TextBlock>
                                 <Border x:Name="previewActiveWindowColor" Grid.Row="1" Grid.Column="1" Margin="8,2,0,2" Width="32" HorizontalAlignment="Left" BorderThickness="1" BorderBrush="Gray" Grid.ColumnSpan="2" />
-                                <Button Grid.Row="1" Grid.Column="2" Margin="0,2,0,2" Content="Choose..." Click="ChooseActiveWindowColor_Click" />
+                                <Button Grid.Row="1" Grid.Column="2" Margin="0,2,0,2" Height="24" Content="Choose..." Click="ChooseActiveWindowColor_Click" />
                                 <Button x:Name="btnRevertActiveWindowColor" Grid.Row="1" Grid.Column="3" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertActiveWindowColor_Click" />
 
                                 <TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" Height="16">Window Border</TextBlock>
                                 <Border x:Name="previewWindowBorderColor" Grid.Row="2" Grid.Column="1" Margin="8,2,0,2" Width="32" HorizontalAlignment="Left" BorderThickness="1" BorderBrush="Gray" Grid.ColumnSpan="2" />
-                                <Button Grid.Row="2" Grid.Column="2" Margin="0,2,0,2" Content="Choose..." Click="ChooseWindowBorderColor_Click" />
+                                <Button Grid.Row="2" Grid.Column="2" Margin="0,2,0,2" Height="24" Content="Choose..." Click="ChooseWindowBorderColor_Click" />
                                 <Button x:Name="btnRevertWindowBorderColor" Grid.Row="2" Grid.Column="3" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertWindowBorderColor_Click" />
 
                                 <TextBlock Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" Height="16">Window Border (Active)</TextBlock>
                                 <Border x:Name="previewActiveWindowBorderColor" Grid.Row="3" Grid.Column="1" Margin="8,2,0,2" Width="32" HorizontalAlignment="Left" BorderThickness="1" BorderBrush="Gray" Grid.ColumnSpan="2" />
-                                <Button Grid.Row="3" Grid.Column="2" Margin="0,2,0,2" Content="Choose..." Click="ChooseActiveWindowBorderColor_Click" />
+                                <Button Grid.Row="3" Grid.Column="2" Margin="0,2,0,2" Height="24" Content="Choose..." Click="ChooseActiveWindowBorderColor_Click" />
                                 <Button x:Name="btnRevertActiveWindowBorderColor" Grid.Row="3" Grid.Column="3" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertActiveWindowBorderColor_Click" />
                             </Grid>
                         </GroupBox>
@@ -136,11 +163,11 @@
                                 </Grid.RowDefinitions>
 
                                 <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center">Primary Update Delay (ms)</TextBlock>
-                                <TextBox x:Name="txtPrimaryDelay" Grid.Row="0" Grid.Column="1" Margin="8,2,0,2" TextChanged="TextInputChanged" />
+                                <TextBox x:Name="txtPrimaryDelay" Grid.Row="0" Grid.Column="1" Margin="8,2,0,2" Padding="3" TextChanged="TextInputChanged" />
                                 <Button x:Name="btnRevertPrimaryDelay" Grid.Row="0" Grid.Column="2" Width="28" Height="24" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertPrimaryDelay_Click" />
 
                                 <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center">Secondary Update Delay (ms)</TextBlock>
-                                <TextBox x:Name="txtSecondaryDelay" Grid.Row="1" Grid.Column="1" Margin="8,2,0,2" TextChanged="TextInputChanged" />
+                                <TextBox x:Name="txtSecondaryDelay" Grid.Row="1" Grid.Column="1" Margin="8,2,0,2" Padding="3" TextChanged="TextInputChanged" />
                                 <Button x:Name="btnRevertSecondaryDelay" Grid.Row="1" Grid.Column="2" Width="28" Height="24" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertSecondaryDelay_Click" />
                             </Grid>
                         </GroupBox>

@@ -15,11 +15,11 @@ namespace Switchie
     // Pager main application form
     public class MainForm : Form
     {
-        private string version = "1.4.0";
+        private string version = "1.3.2";
 
         // --- Internal Application State ---
         private bool _isAppPinned = false;
-        private bool _forceAppAlwaysOnTop = false;
+        //private bool _forceAppAlwaysOnTop = false;
 
         private int _activeDesktopIndex = 0;
         private int _currentDesktopCount = 0;
@@ -50,17 +50,22 @@ namespace Switchie
         public Color WindowBorderColor { get; set; } = Color.Silver;
         public Color ActiveWindowBorderColor { get; set; } = Color.White;
 
+        public int PagerHeight { get; set; } = 40; // Width is calculated from that
+
         public enum RenderMode { Windows, Icons }
         public RenderMode WindowRenderMode { get; set; } = RenderMode.Windows;
 
-        public int PagerHeight { get; set; } = 40; // Width is calculated from that
+        public int PaddingSize { get; set; } = 1;
+        public int IconPaddingX { get; set; } = 0;
+        public int IconPaddingY { get; set; } = 0;
 
-        private int primaryUpdateDelay = 200;
-        private int secondaryUpdateDelay = 500;
+        private int PrimaryUpdateDelay { get; set; } = 200;
+        private int SecondaryUpdateDelay { get; set; } = 500;
 
         // This works only when the pinning is manually done by the user after application has started
         // (because auto pinning will always fail)
-        private bool _showAppInTaskbar = true;
+        // -> Currently not configurable
+        private bool ShowAppInTaskbar { get; set; } = true;
 
         public MainForm()
         {
@@ -86,7 +91,7 @@ namespace Switchie
             Icon = new System.Drawing.Icon(
                 new MemoryStream(Helpers.GetResourceFromAssembly(typeof(Program), "Switchie.Resources.icon.ico")));
 
-            ShowInTaskbar = _showAppInTaskbar;
+            ShowInTaskbar = ShowAppInTaskbar;
 
             // Collect all virtual desktops and add mouse event listeners to them
             GetVirtualDesktopsAndAddMouseHandlers(_virtualDesktops);
@@ -206,7 +211,7 @@ namespace Switchie
                     }));
 
                     // So we don't waste too many CPU cycles
-                    await Task.Delay(primaryUpdateDelay);
+                    await Task.Delay(PrimaryUpdateDelay);
                 }
             });
 
@@ -231,7 +236,7 @@ namespace Switchie
                         }
 
                         // This should only be the case at start up, right
-                        if (_showAppInTaskbar && !_isAppPinned)
+                        if (ShowAppInTaskbar && !_isAppPinned)
                         {
                             try
                             {
@@ -250,7 +255,7 @@ namespace Switchie
                         }
                         catch { }
                     }));
-                    await Task.Delay(secondaryUpdateDelay);
+                    await Task.Delay(SecondaryUpdateDelay);
                 }
             });
         }
@@ -285,7 +290,7 @@ namespace Switchie
 
         private void ShowContextMenu()
         {
-            _forceAppAlwaysOnTop = false;
+            //_forceAppAlwaysOnTop = false;
             ContextMenuStrip menu = new ContextMenuStrip();
 
             Helpers.AddMenuItem(this, menu,
@@ -352,7 +357,7 @@ namespace Switchie
                 () =>
                 {
                     OpenAboutDialog();
-                    _forceAppAlwaysOnTop = true;
+                    //_forceAppAlwaysOnTop = true;
                 });
 
             Helpers.AddMenuItem(this, menu,
@@ -366,7 +371,7 @@ namespace Switchie
                     Environment.Exit(1);
                 });
 
-            menu.Opened += (ss, ee) => _forceAppAlwaysOnTop = false;
+            //menu.Opened += (ss, ee) => _forceAppAlwaysOnTop = false;
             menu.Show(this, PointToClient(Cursor.Position));
         }
 
@@ -489,6 +494,9 @@ namespace Switchie
         private void ApplySettings(AppSettings settings, bool persist)
         {
             PagerHeight = settings.PagerHeight;
+            PaddingSize = settings.PaddingSize;
+            IconPaddingX = settings.IconPaddingX;
+            IconPaddingY = settings.IconPaddingY;
 
             BackgroundColor = settings.BackgroundColor;
             DesktopBorderColor = settings.DesktopBorderColor;
@@ -499,8 +507,8 @@ namespace Switchie
             ActiveWindowBorderColor = settings.ActiveWindowBorderColor;
             DesktopBorderStyle = settings.DesktopBorderStyle == 1 ? BorderStyle.Underline : BorderStyle.Box;
 
-            primaryUpdateDelay = settings.PrimaryUpdateDelay;
-            secondaryUpdateDelay = settings.SecondaryUpdateDelay;
+            PrimaryUpdateDelay = settings.PrimaryUpdateDelay;
+            SecondaryUpdateDelay = settings.SecondaryUpdateDelay;
 
             WindowRenderMode = settings.RenderMode == 1 ? RenderMode.Icons : RenderMode.Windows;
 

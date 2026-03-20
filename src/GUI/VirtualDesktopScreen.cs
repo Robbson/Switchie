@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
@@ -23,7 +24,6 @@ namespace Switchie
         public void OnPaint(PaintEventArgs e)
         {
             Graphics g = e.Graphics;
-
             Window[] windows;
 
             // For windows render mode, all windows have to be sorted in z-order to draw from back to front
@@ -31,7 +31,6 @@ namespace Switchie
             {
                 windows = Form.Windows.Where(x => x.VirtualDesktopIndex == VirtualDesktop.VirtualDesktopIndex).OrderBy(x => x.ZOrder).ToArray();
             }
-
             // Otherwise order should stay the same (using process id)
             else
             {
@@ -40,18 +39,28 @@ namespace Switchie
                 // Order by process is similar to order is taskbar, as long as the user doesn't move them
                 windows = windowsEnumerated.OrderBy(x => x.ProcessID).ToArray();
             }
-
             if (windows.Length == 0) return;
 
+            int iconPaddingX = Form.IconPaddingX;
+            int iconPaddingY = Form.IconPaddingY;
+            int border = Form.PaddingSize;
+
+            // Reduce available content space by border
+            int width = Size.Width - border * 2;
+            int height = Size.Height - border * 2;
+
             // Parition the screen equally for the Icons
-            int hSpace = Size.Width / windows.Length;
-            
-            if(hSpace < windows[0].Icon.Width)
+            int hSpace = width / windows.Length;
+            int lineBreak = windows.Length;
+
+            // Support a second line of icons if we run out of space horizontally
+            if (hSpace < windows[0].Icon.Width + iconPaddingX)
             {
-                Debug.WriteLine("Not enough Space!");
+                lineBreak = windows.Length / 2 + 1;
+                hSpace = width / lineBreak;
             }
-            
-            //int vSpace = Size.Height / windows
+
+            int wcounter = 0;
             int wnum = windows.Length - 1;
             foreach (var wnd in windows)
             {
@@ -62,17 +71,42 @@ namespace Switchie
                 {
                     if (Form.WindowRenderMode == MainForm.RenderMode.Icons)
                     {
-                        var yPos = (Size.Height / 2) - wnd.Icon.Height / 2;
-                        var area = new Rectangle(Location.X + wnum * hSpace, yPos-2, hSpace, wnd.Icon.Height+4);
-                        WindowAreas[wnd.Handle] = area;
+                        int yPos;
+                        int xPos = border / 2 + Location.X + wcounter * hSpace;
+
+                        if (lineBreak == windows.Length)
+                        {
+                            yPos = border / 2 + height / 2 - wnd.Icon.Height / 2;
+                        }
+                        else
+                        {
+                            if (wcounter < lineBreak)
+                            {
+                                yPos = border / 2 + height / 4 - (wnd.Icon.Height + iconPaddingY) / 2;
+                            }
+                            else
+                            {
+                                xPos -= lineBreak * hSpace;
+                                yPos = border / 2 + height / 4 + wnd.Icon.Height + iconPaddingY;
+                            }
+                        }
+
+                        var areaYPadding = iconPaddingY >= 0 ? iconPaddingY : 0;
+
+                        var selectionArea = new Rectangle(
+                            xPos,
+                            yPos - areaYPadding,
+                            hSpace,
+                            wnd.Icon.Height + areaYPadding * 2);
+
+                        WindowAreas[wnd.Handle] = selectionArea;
 
                         if (wnd.IsActive)
                         {
-                            // Rectangle for the selected icon, currently fills to whole height
-                            g.FillRectangle(new SolidBrush(fillColor), area);
+                            g.FillRectangle(new SolidBrush(fillColor), selectionArea);
                         }
 
-                        g.DrawImage(wnd.Icon, new Point(area.X + hSpace / 2 - wnd.Icon.Width / 2, yPos));
+                        g.DrawImage(wnd.Icon, new Point(selectionArea.X + hSpace / 2 - wnd.Icon.Width / 2, yPos));
                     }
                     else
                     {
@@ -116,6 +150,7 @@ namespace Switchie
                             new Rectangle(area.X, area.Y, area.Width - (Form.BorderSize), area.Height - (Form.BorderSize)));
                     }
                     wnum--;
+                    wcounter++;
                 }
                 else
                     continue;

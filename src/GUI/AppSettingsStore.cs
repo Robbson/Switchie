@@ -18,6 +18,9 @@ namespace Switchie
                     RenderMode = ReadInt(key, "RenderMode", defaults.RenderMode),
                     DesktopBorderStyle = ReadInt(key, "DesktopBorderStyle", defaults.DesktopBorderStyle),
                     PagerHeight = ReadInt(key, "PagerHeight", defaults.PagerHeight),
+                    PaddingSize = ReadInt(key, "PaddingSize", defaults.PaddingSize),
+                    IconPaddingX = ReadInt(key, "IconPaddingX", defaults.IconPaddingX),
+                    IconPaddingY = ReadInt(key, "IconPaddingY", defaults.IconPaddingY),
 
                     BackgroundColor = ReadColor(key, "BackgroundColor", defaults.BackgroundColor),
 
@@ -43,6 +46,9 @@ namespace Switchie
                 key.SetValue("RenderMode", settings.RenderMode, RegistryValueKind.DWord);
                 key.SetValue("DesktopBorderStyle", settings.DesktopBorderStyle, RegistryValueKind.DWord);
                 key.SetValue("PagerHeight", settings.PagerHeight, RegistryValueKind.DWord);
+                key.SetValue("PaddingSize", settings.PaddingSize, RegistryValueKind.DWord);
+                key.SetValue("IconPaddingX", settings.IconPaddingX, RegistryValueKind.DWord);
+                key.SetValue("IconPaddingY", settings.IconPaddingY, RegistryValueKind.DWord);
 
                 key.SetValue("BackgroundColor", settings.BackgroundColor.ToArgb(), RegistryValueKind.DWord);
 

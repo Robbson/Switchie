@@ -35,6 +35,9 @@ namespace Switchie
             cmbRenderMode.SelectedIndex = Math.Max(0, Math.Min(1, Settings.RenderMode));
             cmbDesktopBorderStyle.SelectedIndex = Math.Max(0, Math.Min(1, Settings.DesktopBorderStyle));
             txtPagerHeight.Text = Settings.PagerHeight.ToString(CultureInfo.InvariantCulture);
+            txtPaddingSize.Text = Settings.PaddingSize.ToString(CultureInfo.InvariantCulture);
+            txtIconPaddingX.Text = Settings.IconPaddingX.ToString(CultureInfo.InvariantCulture);
+            txtIconPaddingY.Text = Settings.IconPaddingY.ToString(CultureInfo.InvariantCulture);
             
             _backgroundColor = Settings.BackgroundColor;
 
@@ -116,6 +119,9 @@ namespace Switchie
             cmbRenderMode.SelectedIndex = _defaults.RenderMode <= 0 ? 0 : 1;
             cmbDesktopBorderStyle.SelectedIndex = _defaults.DesktopBorderStyle <= 0 ? 0 : 1;
             txtPagerHeight.Text = _defaults.PagerHeight.ToString(CultureInfo.InvariantCulture);
+            txtPaddingSize.Text = _defaults.PaddingSize.ToString(CultureInfo.InvariantCulture);
+            txtIconPaddingX.Text = _defaults.IconPaddingX.ToString(CultureInfo.InvariantCulture);
+            txtIconPaddingY.Text = _defaults.IconPaddingY.ToString(CultureInfo.InvariantCulture);
 
             _backgroundColor = _defaults.BackgroundColor;
 
@@ -148,6 +154,24 @@ namespace Switchie
         private void RevertDesktopBorderStyle_Click(object sender, RoutedEventArgs e)
         {
             cmbDesktopBorderStyle.SelectedIndex = _defaults.DesktopBorderStyle <= 0 ? 0 : 1;
+            UpdateRevertButtons();
+        }
+
+        private void RevertPaddingSize_Click(object sender, RoutedEventArgs e)
+        {
+            txtPaddingSize.Text = _defaults.PaddingSize.ToString(CultureInfo.InvariantCulture);
+            UpdateRevertButtons();
+        }
+
+        private void RevertIconPaddingX_Click(object sender, RoutedEventArgs e)
+        {
+            txtIconPaddingX.Text = _defaults.IconPaddingX.ToString(CultureInfo.InvariantCulture);
+            UpdateRevertButtons();
+        }
+
+        private void RevertIconPaddingY_Click(object sender, RoutedEventArgs e)
+        {
+            txtIconPaddingY.Text = _defaults.IconPaddingY.ToString(CultureInfo.InvariantCulture);
             UpdateRevertButtons();
         }
 
@@ -220,9 +244,27 @@ namespace Switchie
                 return;
             }
 
-            if (!TryParsePositiveInt(txtPrimaryDelay.Text, 10, out int primaryDelay))
+            if (!TryParsePositiveInt(txtPaddingSize.Text, 0, out int paddingSize))
             {
-                ShowValidationError("Primary Update Delay must be at least 10 ms.");
+                ShowValidationError("Padding Size must be 0 or greater.");
+                return;
+            }
+
+            if (!TryParseInt(txtIconPaddingX.Text, out int iconPaddingX))
+            {
+                ShowValidationError("Icon Padding X must be a valid whole number.");
+                return;
+            }
+
+            if (!TryParseInt(txtIconPaddingY.Text, out int iconPaddingY))
+            {
+                ShowValidationError("Icon Padding Y must be a valid whole number.");
+                return;
+            }
+
+            if (!TryParsePositiveInt(txtPrimaryDelay.Text, 1, out int primaryDelay))
+            {
+                ShowValidationError("Primary Update Delay must be at least 1 ms.");
                 return;
             }
 
@@ -237,6 +279,9 @@ namespace Switchie
                 RenderMode = cmbRenderMode.SelectedIndex <= 0 ? 0 : 1,
                 DesktopBorderStyle = cmbDesktopBorderStyle.SelectedIndex <= 0 ? 0 : 1,
                 PagerHeight = pagerHeight,
+                PaddingSize = paddingSize,
+                IconPaddingX = iconPaddingX,
+                IconPaddingY = iconPaddingY,
                 PrimaryUpdateDelay = primaryDelay,
                 SecondaryUpdateDelay = secondaryDelay,
                 BackgroundColor = _backgroundColor,
@@ -257,6 +302,11 @@ namespace Switchie
             return int.TryParse(input, NumberStyles.Integer, CultureInfo.InvariantCulture, out value) && value >= min;
         }
 
+        private static bool TryParseInt(string input, out int value)
+        {
+            return int.TryParse(input, NumberStyles.Integer, CultureInfo.InvariantCulture, out value);
+        }
+
         private static AppSettings Clone(AppSettings source)
         {
             return new AppSettings
@@ -264,6 +314,9 @@ namespace Switchie
                 RenderMode = source.RenderMode,
                 DesktopBorderStyle = source.DesktopBorderStyle,
                 PagerHeight = source.PagerHeight,
+                PaddingSize = source.PaddingSize,
+                IconPaddingX = source.IconPaddingX,
+                IconPaddingY = source.IconPaddingY,
                 PrimaryUpdateDelay = source.PrimaryUpdateDelay,
                 SecondaryUpdateDelay = source.SecondaryUpdateDelay,
                 DesktopBorderColor = source.DesktopBorderColor,
@@ -307,6 +360,9 @@ namespace Switchie
             btnRevertRenderMode.Visibility = IsDifferent(cmbRenderMode.SelectedIndex, _defaults.RenderMode) ? Visibility.Visible : Visibility.Hidden;
             btnRevertDesktopBorderStyle.Visibility = IsDifferent(cmbDesktopBorderStyle.SelectedIndex, _defaults.DesktopBorderStyle) ? Visibility.Visible : Visibility.Hidden;
             btnRevertPagerHeight.Visibility = IsDifferent(txtPagerHeight.Text, _defaults.PagerHeight) ? Visibility.Visible : Visibility.Hidden;
+            btnRevertPaddingSize.Visibility = IsDifferent(txtPaddingSize.Text, _defaults.PaddingSize) ? Visibility.Visible : Visibility.Hidden;
+            btnRevertIconPaddingX.Visibility = IsDifferent(txtIconPaddingX.Text, _defaults.IconPaddingX) ? Visibility.Visible : Visibility.Hidden;
+            btnRevertIconPaddingY.Visibility = IsDifferent(txtIconPaddingY.Text, _defaults.IconPaddingY) ? Visibility.Visible : Visibility.Hidden;
             btnRevertPrimaryDelay.Visibility = IsDifferent(txtPrimaryDelay.Text, _defaults.PrimaryUpdateDelay) ? Visibility.Visible : Visibility.Hidden;
             btnRevertSecondaryDelay.Visibility = IsDifferent(txtSecondaryDelay.Text, _defaults.SecondaryUpdateDelay) ? Visibility.Visible : Visibility.Hidden;
 

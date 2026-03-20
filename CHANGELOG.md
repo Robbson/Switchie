@@ -1,7 +1,19 @@
 # Switchie Changelog
 
 
-## v1.4.0
+## v1.3.2
+
+New features:
+- Icons render mode supports a second row when there isn't enough space in one row
+- Add parameters for desktop padding and icon padding in settings dialog
+
+Changes:
+- fixing performance properties
+- layout improvements in settings dialog
+- app versioning increase now less aggressive
+
+
+## v1.3.1
 
 Changes:
 - Icons render mode now also supports selection as well as drag & drop to other desktops
