@@ -17,9 +17,12 @@ namespace Switchie
     {
         private string version = "1.2.0";
 
+        // This works only when the pinning is manually done by the user after application has started (because auto pinning will always fail)
+        private bool _showAppInTaskbar = true;
+        
         private bool _isAppPinned = false;
         private int _activeDesktopIndex = 0;
-        private int currentDesktopCount = 0;
+        private int _currentDesktopCount = 0;
         private bool _forceAlwaysOnTop = false;
         private string _windowsHash = string.Empty;
 
@@ -76,6 +79,8 @@ namespace Switchie
             BackColor = BackgroundColor;
             FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             Icon = new System.Drawing.Icon(new MemoryStream(Helpers.GetResourceFromAssembly(typeof(Program), "Switchie.Resources.icon.ico")));
+
+            ShowInTaskbar = _showAppInTaskbar;
 
             // Collect all virtual desktops and add mouse event listeners to them
             GetVirtualDesktopsAndAddMouseHandlers(_virtualDesktops);
@@ -148,7 +153,7 @@ namespace Switchie
             return hwndAtPoint != this.Handle;
         }
 
-        private bool hasDesktopCountChanged() => currentDesktopCount != WindowsVirtualDesktop.GetInstance().Count;
+        private bool hasDesktopCountChanged() => _currentDesktopCount != WindowsVirtualDesktop.GetInstance().Count;
 
         private void ResetVirtualDesktop()
         {
@@ -178,8 +183,8 @@ namespace Switchie
 
         private void GetVirtualDesktopsAndAddMouseHandlers(List<VirtualDesktop> virtualDesktops)
         {
-            currentDesktopCount = WindowsVirtualDesktop.GetInstance().Count;
-            Enumerable.Range(0, currentDesktopCount).ToList().ForEach(d =>
+            _currentDesktopCount = WindowsVirtualDesktop.GetInstance().Count;
+            Enumerable.Range(0, _currentDesktopCount).ToList().ForEach(d =>
             {
                 VirtualDesktop desktop = new VirtualDesktop(d, this, new Point(_virtualDesktops.Sum(i => i.Size.Width), 0));
                 MouseUp += desktop.OnMouseUp;
@@ -251,9 +256,9 @@ namespace Switchie
                             ResetVirtualDesktop();
                         }
 
-                        // This should only be the case at start up
-                        if (!_isAppPinned)
-                        {
+                        // This should only be the case at start up, right
+                        if (_showAppInTaskbar && !_isAppPinned) { 
+                        
                             try
                             {
                                 // Note: The internal Divided by Zero error happens here

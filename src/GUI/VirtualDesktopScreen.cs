@@ -58,8 +58,8 @@ namespace Switchie
                 {
                     if (Form.WindowRenderMode == MainForm.RenderMode.Icons)
                     {
-                        // TODO: Window selection doesn't work in this mode yet
-
+                        // TODO: Window selection doesn't work in this mode 
+                        // TODO: There should to make it looking like in the original (user preferences)
                         // Window rectangle fill
                         /*
                         g.FillRectangle(
