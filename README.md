@@ -1,3 +1,5 @@
+<img src="src/Resources/icon.png" width="200">
+
 # Switchie
 Switchie is a virtual desktop pager for Windows inspired by various Linux-based virtual desktop pagers
 
