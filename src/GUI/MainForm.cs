@@ -12,41 +12,42 @@ using System.Windows.Forms;
 
 namespace Switchie
 {
+    // Main Application Form
     public class MainForm : Form
     {
-        private Point dragOffset;
+        private string version = "1.2.0";
+
         private bool _isAppPinned = false;
         private int _activeDesktopIndex = 0;
+        private int currentDesktopCount = 0;
         private bool _forceAlwaysOnTop = false;
         private string _windowsHash = string.Empty;
 
-        private List<VirtualDesktop> _virtualDesktops = new List<VirtualDesktop>();
+        private readonly List<VirtualDesktop> _virtualDesktops = new List<VirtualDesktop>();
 
-        private int updateDelay = 200;
+        private Point dragOffset;
+        public bool IsDraggingWindow { get; set; }
+
+        private readonly int primaryUpdateDelay = 200;
+        private readonly int secondaryUpdateDelay = 500;
 
         public int BorderSize { get; set; } = 1;
         public int PagerHeight { get; set; } = 40;
-        public bool IsDraggingWindow { get; set; }
         public int VirtualDesktopSpacing { get; set; } = 4;
 
-        public Color BackgroundColor { get; set; } = Color.FromArgb(64, 64, 64);
-
         public Color DesktopColor { get; set; } = Color.FromArgb(32, 32, 32); // Background inbetween desktops
-
+        public Color BackgroundColor { get; set; } = Color.FromArgb(64, 64, 64);
         public Color WindowColor { get; set; } = Color.FromArgb(255, Color.Gray);
-
         public Color WindowBorderColor { get; set; } = Color.Silver;
 
         public Color ActiveWindowColor { get; set; } = Color.FromArgb(255, Color.Silver);
-
         public Color ActiveWindowBorderColor { get; set; } = Color.White;
-
         public Color ActiveDesktopBorderColor { get; set; } = Color.LightBlue;
 
         public ConcurrentBag<Window> Windows = new ConcurrentBag<Window>();
 
-        private WinEventHook.WinEventDelegate _proc;
-        private IntPtr _hook;
+        private readonly WinEventHook.WinEventDelegate _proc;
+        private readonly IntPtr _hook;
 
         public enum RenderMode
         {
@@ -66,9 +67,6 @@ namespace Switchie
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 
             StartPosition = FormStartPosition.Manual;
-            ClientSize = new System.Drawing.Size(1, 1);
-            MinimumSize = new System.Drawing.Size(1, 1);
-
             ControlBox = false;
             MaximizeBox = false;
             MinimizeBox = false;
@@ -80,30 +78,18 @@ namespace Switchie
             Icon = new System.Drawing.Icon(new MemoryStream(Helpers.GetResourceFromAssembly(typeof(Program), "Switchie.Resources.icon.ico")));
 
             // Collect all virtual desktops and add mouse event listeners to them
-            _virtualDesktops = GetVirtualDesktopsAndAddMouseHandlers();
+            GetVirtualDesktopsAndAddMouseHandlers(_virtualDesktops);
 
             // Pager size depending on current amount of virtual desktops
-            // -> TODO: This doesn't get updated when amount of desktops has changed
             Size = new Size(_virtualDesktops.Sum(x => x.Size.Width), PagerHeight);
             MinimumSize = Size;
             MaximumSize = Size;
             ClientSize = Size;
 
-            var storedLocation = Utilties.GetLocationFromRegistry();
-            if (storedLocation.HasValue)
-            {
-                Location = storedLocation.Value;
-            }
-            else
-            {
-                // Default: Centered and above Taskbar
-                // -> Preffered: 98, Screen.PrimaryScreen.WorkingArea.Bottom
-                // -> There should be some defaults options in the settings
-                Location = new System.Drawing.Point(
-                    (Screen.PrimaryScreen.Bounds.Width / 2) - (Size.Width / 2),
-                    Screen.PrimaryScreen.WorkingArea.Bottom - Size.Height
-                );
-            }
+            WindowRenderMode = (RenderMode)RegistryAccess.getRenderMode();
+
+            var storedLocation = RegistryAccess.RestoreLocation();
+            Location = storedLocation ?? getDefaultLocation();
 
             ResumeLayout(false);
             Shown += OnShown;
@@ -111,7 +97,11 @@ namespace Switchie
             MouseDown += OnMouseDown;
             MouseMove += OnMouseMove;
 
-            _proc = WinEventCallback;
+            // Start global Windows Event Hook to bring app window to front again when covered by the taskbar before
+            // -> only useful whenn overlapping with taskbar is required
+            // -> currently not used because of overlapping detection
+            //_proc = WinEventCallback;
+
             /*_hook = WinEventHook.SetWinEventHook(
                 WinEventHook.EVENT_SYSTEM_FOREGROUND,
                 WinEventHook.EVENT_SYSTEM_FOREGROUND,
@@ -119,49 +109,49 @@ namespace Switchie
                 WinEventHook.WINEVENT_OUTOFCONTEXT);*/
         }
 
-        private void WinEventCallback(
-            IntPtr hWinEventHook,
-            uint eventType,
-            IntPtr hwnd,
-            int idObject,
-            int idChild,
-            uint dwEventThread,
-            uint dwmsEventTime)
+        private void WinEventCallback(IntPtr hWinEventHook, uint eventType, IntPtr hwnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime)
         {
             var className = new StringBuilder(256);
             IntPtr nRet = WinAPI.GetClassName(hwnd, className, className.Capacity);
             Debug.WriteLine("Hook called for " + className);
 
-            // Optional: eigenes Fenster ignorieren
+            // Ingore own window
             if (hwnd == Handle)
                 return;
 
-            /*
+            // Currently we pay only attention to Shell TrayWnd events
             if (className.ToString() == "Shell_TrayWnd")
             {
                 Task.Delay(50).ContinueWith(_ =>
                 {
                     if (!IsDisposed)
                     {
-                        BeginInvoke((Action)(() => RestoreWindow()));
+                        BeginInvoke((Action)(() => WindowManager.RestoreWindow(Handle)));
                     }
                 });
-            }*/
+            }
         }
 
-        private void RestoreWindow()
+        // Default app window location: Centered and above Taskbar
+        private Point getDefaultLocation() => new Point((Screen.PrimaryScreen.Bounds.Width / 2) - (Size.Width / 2), Screen.PrimaryScreen.WorkingArea.Bottom - Size.Height);
+
+        // App Window covering detection: Currently only by its center point
+        private bool isCovered()
         {
-            WinAPI.ShowWindowAsync(Handle, WinAPI.SW_RESTORE);
-            WinAPI.ShowWindowAsync(Handle, WinAPI.SW_SHOWNOACTIVATE);
-            WinAPI.SetWindowPos(Handle, WinAPI.HWND_TOPMOST,
-                0, 0, 0, 0,
-                WinAPI.SWP_NOMOVE | WinAPI.SWP_NOSIZE | WinAPI.SWP_NOACTIVATE);
+            var rect = this.Bounds;
+            var point = new WinAPI.POINT
+            {
+                X = rect.Left + rect.Width / 2,
+                Y = rect.Top + rect.Height / 2
+            };
+            var hwndAtPoint = WinAPI.WindowFromPoint(point);
+            return hwndAtPoint != this.Handle;
         }
+
+        private bool hasDesktopCountChanged() => currentDesktopCount != WindowsVirtualDesktop.GetInstance().Count;
 
         private void ResetVirtualDesktop()
         {
-            //SuspendLayout();
-
             // Remove mouse listeners for all existing desktops first before removing them
             _virtualDesktops.ForEach((desktop) =>
             {
@@ -176,27 +166,22 @@ namespace Switchie
             WindowsVirtualDesktopManager.Restart();
 
             _virtualDesktops.Clear();
-            _virtualDesktops = GetVirtualDesktopsAndAddMouseHandlers();
+            GetVirtualDesktopsAndAddMouseHandlers(_virtualDesktops);
 
-            // TODO: Change recognized but no pager size difference?
-            Debug.WriteLine(_virtualDesktops.Count);
-
-            Size = new Size(_virtualDesktops.Sum(x => x.Size.Width), PagerHeight * 2);
-            MinimumSize = Size;
-            MaximumSize = Size;
-            ClientSize = Size;
-
-            //base.Size = Size;
-            //Invalidate();
-            //ResumeLayout(false);
+            SuspendLayout();
+            var newSize = new Size(_virtualDesktops.Sum(d => d.Size.Width), PagerHeight);
+            ClientSize = newSize;
+            MinimumSize = newSize;
+            MaximumSize = newSize;
+            ResumeLayout();
         }
 
-        private List<VirtualDesktop> GetVirtualDesktopsAndAddMouseHandlers()
+        private void GetVirtualDesktopsAndAddMouseHandlers(List<VirtualDesktop> virtualDesktops)
         {
-            var virtualDesktops = new List<VirtualDesktop>();
-            Enumerable.Range(0, WindowsVirtualDesktop.GetInstance().Count).ToList().ForEach(x =>
+            currentDesktopCount = WindowsVirtualDesktop.GetInstance().Count;
+            Enumerable.Range(0, currentDesktopCount).ToList().ForEach(d =>
             {
-                VirtualDesktop desktop = new VirtualDesktop(x, this, new Point(_virtualDesktops.Sum(y => y.Size.Width), 0));
+                VirtualDesktop desktop = new VirtualDesktop(d, this, new Point(_virtualDesktops.Sum(i => i.Size.Width), 0));
                 MouseUp += desktop.OnMouseUp;
                 MouseDown += desktop.OnMouseDown;
                 MouseMove += desktop.OnMouseMove;
@@ -204,25 +189,23 @@ namespace Switchie
                 DragDrop += desktop.OnDragDrop;
                 virtualDesktops.Add(desktop);
             });
-            return virtualDesktops;
         }
 
         private void OnShown(object sender, EventArgs e)
         {
-            // There are two asyncly started loops running as the main loop of the application. Why two?
+            // Primary application loop to check global window changes so the miniatures get updated
             Task.Run(async () =>
             {
-                // Update application state and always bring the Window to front
                 while (!Program.ApplicationClosing.IsCancellationRequested)
                 {
                     Invoke(new Action(() =>
                     {
                         try
                         {
-                            if (_forceAlwaysOnTop) WindowManager.SetAlwaysOnTop(Handle, _forceAlwaysOnTop);
+                            //if (_forceAlwaysOnTop) WindowManager.SetAlwaysOnTop(Handle, _forceAlwaysOnTop);
 
                             // Change Detection via Hash (calculated on basic parameters of all opened windows)
-                            // -> Works now finally as expected because all windows are sorted first to remain in the same 
+                            // -> Works now finally as expected because all windows are sorted first to remain in the same state
                             Windows = new ConcurrentBag<Window>(WindowManager.GetOpenWindows());
                             var hash =
                             $"{_activeDesktopIndex}" +
@@ -245,25 +228,35 @@ namespace Switchie
 
                     // Refresh rate for thumbnails by default 1, but 100 is also fine, otherwise the
                     // hash calculation and string concatenations happens every ms
-                    await Task.Delay(updateDelay); // TODO: Refresh Rate einstellbar machen
+                    await Task.Delay(primaryUpdateDelay);
                 }
             });
 
+            // Secondary application loop for pinning the app, bringing it to front when hidden by some other window and detect desktop count changes
+            // -> only pinned apps are visible on all virtual desktops, which is a requirement for this app 
             Task.Run(async () =>
             {
-                // App windows can be pinned (in active windows overview) so they are presented on all virtual desktops
-                // -> But why forcing here it?
                 while (!Program.ApplicationClosing.IsCancellationRequested)
                 {
                     Invoke(new Action(() =>
                     {
+                        // Check if window is covered shoulf be fine with every 500ms 
+                        if (isCovered())
+                        {
+                            WindowManager.RestoreWindow(Handle);
+                        }
+
+                        if (hasDesktopCountChanged())
+                        {
+                            ResetVirtualDesktop();
+                        }
+
+                        // This should only be the case at start up
                         if (!_isAppPinned)
                         {
-                            // TODO: Research what it does
-                            Debug.WriteLine("App Not Pinned");
                             try
                             {
-                                // Divided by Zero error here
+                                // Note: The internal Divided by Zero error happens here
                                 WindowsVirtualDesktopManager.GetInstance().PinApplication(Handle);
                                 _isAppPinned = true;
                             }
@@ -277,7 +270,7 @@ namespace Switchie
                         }
                         catch { }
                     }));
-                    await Task.Delay(500); // was 50, 500 also ok when Invalidate() wieder aktiv gesetzt wird
+                    await Task.Delay(secondaryUpdateDelay);
                 }
             });
         }
@@ -315,6 +308,7 @@ namespace Switchie
             _forceAlwaysOnTop = false;
             ContextMenuStrip menu = new ContextMenuStrip();
 
+            // --- Position related ---
             ToolStripDropDown dropDown = new ToolStripDropDown();
             ToolStripDropDownButton dropDownButton = new ToolStripDropDownButton
             {
@@ -324,23 +318,28 @@ namespace Switchie
                 DropDownDirection = ToolStripDropDownDirection.Right
             };
 
-            ToolStripButton buttonRestore = new ToolStripButton("Restore", null, (s, ev) =>
+            ToolStripButton buttonRestorePos = new ToolStripButton("Restore", null, (s, ev) =>
             {
-                var storedLocation = Utilties.GetLocationFromRegistry();
+                var storedLocation = RegistryAccess.RestoreLocation();
                 if (storedLocation != null)
                 {
                     Location = storedLocation.Value;
                 }
             });
 
-            ToolStripButton buttonSave = new ToolStripButton("Save", null, (s, ev) =>
+            ToolStripButton buttonSavePos = new ToolStripButton("Save", null, (s, ev) =>
             {
-                Utilties.SaveLocationToRegistry(Location);
+                RegistryAccess.SaveLocation(Location);
             });
 
-            dropDown.Items.AddRange(new ToolStripItem[] { buttonRestore, buttonSave });
+            ToolStripButton buttonDefaultPos = new ToolStripButton("Default", null, (s, ev) =>
+            {
+                Location = getDefaultLocation();
+            });
+            dropDown.Items.AddRange(new ToolStripItem[] { buttonRestorePos, buttonSavePos, buttonDefaultPos });
             menu.Items.Add(dropDownButton);
 
+            // --- Aditional menu entries ---
             Helpers.AddMenuItem(this, menu,
                 new ToolStripMenuItem()
                 {
@@ -349,20 +348,7 @@ namespace Switchie
                 },
                 () =>
                 {
-                    // Reinitialize Virtual Desktops on redraw failure... but doesn't work?
                     ResetVirtualDesktop();
-
-                    // !: Wenn es nicht in der Taskbar ist, dann erscheint es auch nicht automatisch bei Fensterwechsel!
-                    // -> Aber dennoch im primären Screen, von daher könnte man es möglicherweise auch nach Desktopwechsel forcieren
-                    //base.ShowInTaskbar = false;
-                    //base.Visible = true;
-
-                    // Hide ist nicht das Problem
-                    /*
-                    base.Hide();
-                    await Task.Delay(1000);
-                    base.Show();
-                    */
                 });
 
             Helpers.AddMenuItem(this, menu,
@@ -372,9 +358,7 @@ namespace Switchie
                 },
                 () =>
                 {
-                    MessageBox.Show(
-                        $"Switchie{Environment.NewLine}v1.1.5{Environment.NewLine}{Environment.NewLine}Made by darkguy2008", "About"
-                    );
+                    MessageBox.Show($"Switchie{Environment.NewLine}v{version}{Environment.NewLine}{Environment.NewLine}Made by darkguy2008", "About");
                     _forceAlwaysOnTop = true;
                 });
 
@@ -386,6 +370,7 @@ namespace Switchie
                 () =>
                 {
                     WindowRenderMode = WindowRenderMode == RenderMode.Icons ? RenderMode.Thumbnails : RenderMode.Icons;
+                    RegistryAccess.saveRenderMode((int)WindowRenderMode);
                     Invalidate();
                 });
 
@@ -405,27 +390,14 @@ namespace Switchie
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            //Debug.WriteLine("P");
-
-            // OK aber flackrig, an erster Stelle noch am besten, nach ForEach am schlechtesten
-            // -> führt im Output jedoch zu massiv: Exception thrown: 'System.Runtime.InteropServices.COMException' in Switchie.exe
-            // -> wen wundert's, OnPaint wird ja auch ständig aufgerufen, ich brauche es jedoch nur einmal!
-            //if (ShowInTaskbar) ShowInTaskbar = false;
-
             base.OnPaint(e);
-
             try
             {
                 _virtualDesktops.ForEach(x => x.OnPaint(e));
-                //base.Visible = true;
-                //base.Show();
-                //Opacity = 100; // So wird wenigstens dieser Zoom Effekt unterdrückt
-
             }
             catch
             {
-                // Prüfen, ob hier bei Rendertarget Verlust ein Problem auftritt
-                // -> Vielleicht könnte man das per hide forcieren
+                // TODO: Check, if we run into issues when render target is gone
                 WindowsVirtualDesktop.Restart();
                 WindowsVirtualDesktopManager.Restart();
             }

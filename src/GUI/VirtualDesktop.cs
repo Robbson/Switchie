@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Switchie
@@ -39,7 +40,7 @@ namespace Switchie
 
             _screens.Clear();
 
-            // Ein Virtual Desktop beinhaltet ein komplettes Set an Screens, sofern mehrere physikalische Screens vorhanden sind
+            // Note: A virtual desktop includes a complete set of screens, if available
             foreach (var screen in Screen.AllScreens.OrderBy(x => x.Bounds.Left).ThenBy(x => x.Bounds.Top))
                 _screens.Add(new VirtualDesktopScreen()
                 {
@@ -78,13 +79,9 @@ namespace Switchie
             Graphics g = e.Graphics;
             Color desktopBorderColor = IsCurrentActiveDesktop ? Form.ActiveDesktopBorderColor : Form.DesktopColor;
 
-            /*
-            g.DrawRectangle(
-                new Pen(new SolidBrush(desktopBorderColor), Form.BorderSize),
-                new Rectangle(Location.X, Location.Y, Size.Width - (Form.BorderSize), Size.Height - (Form.BorderSize))
-            );*/
-
             // Just underline the active desktop
+            // -> TODO: Doesn't work if there is no window on the desktop
+
             g.FillRectangle(
                 new SolidBrush(desktopBorderColor),
                 new Rectangle(Location.X, Size.Height-1, Size.Width, Size.Height)
@@ -96,48 +93,34 @@ namespace Switchie
             if (!IsInsideBounds(e.X, e.Y)) return;
             if ((e.Button & MouseButtons.Left) == MouseButtons.Left)
             {
-                Debug.WriteLine("Change to Desktop: " + VirtualDesktopIndex);
-
-                // Test, damit Fenster nach Wechsel wieder erscheint, der Effekt ist aber st�rend
-                //Form.Opacity = 0; // Unterdr�cken des Zoom Effekts bei Ein/Ausblenden der Form wegen ShowInTaskbar
-                //Form.ShowInTaskbar = true;
-
                 WindowsVirtualDesktop.GetInstance().FromIndex(VirtualDesktopIndex).MakeVisible();
-
-                // Set Focus to clicked window, which is usually the topmost
-                // -> funktioniert logischerweise aber so nicht mit meinem alternativen Modus
-                /*var w = GetWindowUnderCursor(e.Location);
-                if (w != null)
-                {
-                    Debug.WriteLine(w.Title);
-                    WinAPI.SetForegroundWindow(w.Handle);
-                }*/
-
                 Form.Invalidate();
-                //Form.ShowInTaskbar = false;
-                //Form.Opacity = 100;
             }
         }
 
         public void OnMouseDown(object sender, MouseEventArgs e)
         {
-            Debug.WriteLine(e.X + " " + e.Y);
-
-            //if (!IsInsideBounds(e.X, e.Y)) return;
+            if (!IsInsideBounds(e.X, e.Y)) return;
             if ((e.Button & MouseButtons.Left) == MouseButtons.Left)
             {
                 var w = GetWindowUnderCursor(e.Location);
                 if (w != null)
                 {
-                    
-
-                    // Sobald das aktiviert wird, habe ich den Scroll-Effekt beim Wechsel!
-                    // -> wahrscheinlich weil hierdurch der Wechsel zuerst ausgel�st wird und nicht durch die App selbst!
-                    //WinAPI.SetForegroundWindow(w.Handle);
-
-                    //SetFocus(w.Handle);
-                    //w.Handle
-                    //w.
+                    // Bring a window into front by clicking on its miniature
+                    // -> doesn't work yet for the alternative mode, probably because of GetWindowUnderCursor() 
+                    if (IsCurrentActiveDesktop)
+                    {
+                        WinAPI.SetForegroundWindow(w.Handle);
+                    }
+                    else
+                    {
+                        // If we come from another desktop we delay the activation so the desktop change can be applied before
+                        // (otherwise we would scroll to the target desktop first)
+                        Task.Delay(300).ContinueWith(_ =>
+                        {
+                            WinAPI.SetForegroundWindow(w.Handle);
+                        });
+                    }
 
                     _dragDropData = new DragDropData()
                     {

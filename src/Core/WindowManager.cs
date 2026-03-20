@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace Switchie
 {
@@ -13,13 +15,6 @@ namespace Switchie
         static readonly string[] classBlacklist = new string[] {
              "Windows.UI.Core.CoreWindow" // Start menu
         };
-
-        static int GetWindowZOrder(IntPtr hWnd)
-        {
-            var zOrder = -1;
-            while ((hWnd = WinAPI.GetWindow(hWnd, WinAPI.GW_HWNDNEXT)) != IntPtr.Zero) zOrder++;
-            return zOrder;
-        }
 
         public static List<Window> GetOpenWindows()
         {
@@ -97,5 +92,23 @@ namespace Switchie
                 0, 0, 0, 0, WinAPI.SWP_NOMOVE | WinAPI.SWP_NOSIZE | WinAPI.SWP_SHOWWINDOW
             );
         }
+
+        public static void RestoreWindow(IntPtr windowHandle)
+        {
+            //WinAPI.ShowWindowAsync(windowHandle, WinAPI.SW_RESTORE);
+            WinAPI.ShowWindowAsync(windowHandle, WinAPI.SW_SHOWNOACTIVATE);
+            WinAPI.SetWindowPos(windowHandle, WinAPI.HWND_TOPMOST,
+                0, 0, 0, 0,
+                WinAPI.SWP_NOMOVE | WinAPI.SWP_NOSIZE | WinAPI.SWP_NOACTIVATE);
+        }
+
+        static int GetWindowZOrder(IntPtr hWnd)
+        {
+            var zOrder = -1;
+            while ((hWnd = WinAPI.GetWindow(hWnd, WinAPI.GW_HWNDNEXT)) != IntPtr.Zero) zOrder++;
+            return zOrder;
+        }
+
+        
     }
 }

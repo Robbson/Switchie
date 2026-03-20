@@ -58,7 +58,7 @@ namespace Switchie
                 {
                     if (Form.WindowRenderMode == MainForm.RenderMode.Icons)
                     {
-                        // TODO: Die Window-Select Methode arbeitet noch nicht mit diesem Modus!
+                        // TODO: Window selection doesn't work in this mode yet
 
                         // Window rectangle fill
                         /*
