@@ -52,22 +52,25 @@ namespace Switchie
 
         private Window GetWindowUnderCursor(Point mousePosition)
         {
-            // TODO: Support the other render mode
-            if (Form.WindowRenderMode == MainForm.RenderMode.Windows)
+            var coord = Form.PointToClient(mousePosition);
+
+            // For windows render mode, we search across all screens for the clicked window in z-order from front to back,
+            // otherwise order should stay the same (using process id)
+            // -> TODO: this doesn't work reliably for the Icons mode when there are more windows of the same application
+            //    because they all share the same process id
+            var windows = Form.WindowRenderMode == MainForm.RenderMode.Windows 
+                ? Form.Windows.Where(x => x.VirtualDesktopIndex == VirtualDesktopIndex).OrderByDescending(x => x.ZOrder)
+                : Form.Windows.Where(w => w.VirtualDesktopIndex == VirtualDesktopIndex).OrderBy(w => w.ProcessID);
+
+            foreach (var w in windows)
             {
-                var coord = Form.PointToClient(mousePosition);
-                var windows = Form.Windows.Where(x => x.VirtualDesktopIndex == VirtualDesktopIndex).OrderByDescending(x => x.ZOrder);
-                foreach (var w in windows)
-                    if (_screens.Any(x => x.WindowAreas.ContainsKey(w.Handle) && x.WindowAreas[w.Handle].Contains(mousePosition)))
-                        if (_screens.Select(x => x.AttachedScreen.DeviceName).Contains(Screen.FromHandle(w.Handle).DeviceName))
-                            return w;
-                return null;
+                if (_screens.Any(x => x.WindowAreas.ContainsKey(w.Handle) && x.WindowAreas[w.Handle].Contains(mousePosition)))
+                    if (_screens.Select(x => x.AttachedScreen.DeviceName).Contains(Screen.FromHandle(w.Handle).DeviceName))
+                    {
+                        return w;
+                    }
             }
-            else
-            {
-                //var windows = Form.Windows.Where(x => x.VirtualDesktopIndex == VirtualDesktopIndex).OrderByDescending(x => x.ZOrder);
-                return null;
-            }
+            return null;
         }
 
         public void OnPaint(PaintEventArgs e)

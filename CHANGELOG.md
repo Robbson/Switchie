@@ -1,5 +1,13 @@
 # Switchie Changelog
 
+
+## v1.4.0
+
+Changes:
+- Icons render mode now also supports selection as well as drag & drop to other desktops
+- the context menu now also has some nice icons based on glyhps
+
+
 ## v1.3.0
 
 New features:

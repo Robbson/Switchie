@@ -15,7 +15,7 @@ namespace Switchie
     // Pager main application form
     public class MainForm : Form
     {
-        private string version = "1.3.0";
+        private string version = "1.4.0";
 
         // --- Internal Application State ---
         private bool _isAppPinned = false;
@@ -288,17 +288,28 @@ namespace Switchie
             _forceAppAlwaysOnTop = false;
             ContextMenuStrip menu = new ContextMenuStrip();
 
+            Helpers.AddMenuItem(this, menu,
+                 new ToolStripMenuItem()
+                 {
+                     Text = "Toggle Render Mode",
+                     Image = Helpers.CreateGlyphBitmap("↔")
+                 },
+                 () =>
+                 {
+                     WindowRenderMode = WindowRenderMode == RenderMode.Icons ? RenderMode.Windows : RenderMode.Icons;
+                     _appSettings.RenderMode = (int)WindowRenderMode;
+                     AppSettingsStore.Save(_appSettings);
+                     Invalidate();
+                 });
+
             // --- Position related ---
-            ToolStripDropDown dropDown = new ToolStripDropDown();
-            ToolStripDropDownButton dropDownButton = new ToolStripDropDownButton
+            ToolStripMenuItem positionMenu = new ToolStripMenuItem()
             {
                 Text = "Position",
-                AutoToolTip = false,
-                DropDown = dropDown,
-                DropDownDirection = ToolStripDropDownDirection.Right
+                Image = Helpers.CreateGlyphBitmap("⌖")
             };
 
-            ToolStripButton buttonRestorePos = new ToolStripButton("Restore", null, (s, ev) =>
+            ToolStripMenuItem buttonRestorePos = new ToolStripMenuItem("Restore", null, (s, ev) =>
             {
                 var storedLocation = RegistryAccess.RestoreLocation();
                 if (storedLocation != null)
@@ -307,36 +318,25 @@ namespace Switchie
                 }
             });
 
-            ToolStripButton buttonSavePos = new ToolStripButton("Save", null, (s, ev) =>
+            ToolStripMenuItem buttonSavePos = new ToolStripMenuItem("Save", null, (s, ev) =>
             {
                 RegistryAccess.SaveLocation(Location);
             });
 
-            ToolStripButton buttonDefaultPos = new ToolStripButton("Default", null, (s, ev) =>
+            ToolStripMenuItem buttonDefaultPos = new ToolStripMenuItem("Default", null, (s, ev) =>
             {
                 Location = GetDefaultLocation();
             });
-            dropDown.Items.AddRange(new ToolStripItem[] { buttonRestorePos, buttonSavePos, buttonDefaultPos });
-            menu.Items.Add(dropDownButton);
+
+            positionMenu.DropDownItems.AddRange(new ToolStripItem[] { buttonRestorePos, buttonSavePos, buttonDefaultPos });
+            menu.Items.Add(positionMenu);
 
             // --- Aditional menu entries ---
             Helpers.AddMenuItem(this, menu,
-             new ToolStripMenuItem()
-             {
-                 Text = "Toggle Render Mode"
-             },
-             () =>
-             {
-                 WindowRenderMode = WindowRenderMode == RenderMode.Icons ? RenderMode.Windows : RenderMode.Icons;
-                 _appSettings.RenderMode = (int)WindowRenderMode;
-                 AppSettingsStore.Save(_appSettings);
-                 Invalidate();
-             });
-
-            Helpers.AddMenuItem(this, menu,
                 new ToolStripMenuItem()
                 {
-                    Text = "Settings"
+                    Text = "Settings",
+                    Image = Helpers.CreateGlyphBitmap("⚙")
                 },
                 () =>
                 {
@@ -346,7 +346,8 @@ namespace Switchie
             Helpers.AddMenuItem(this, menu,
                 new ToolStripMenuItem()
                 {
-                    Text = "About"
+                    Text = "About",
+                    Image = Helpers.CreateGlyphBitmap("ℹ")
                 },
                 () =>
                 {
@@ -357,7 +358,8 @@ namespace Switchie
             Helpers.AddMenuItem(this, menu,
                 new ToolStripMenuItem()
                 {
-                    Text = "Exit"
+                    Text = "Exit",
+                    Image = Helpers.CreateGlyphBitmap("✕")
                 },
                 () =>
                 {
