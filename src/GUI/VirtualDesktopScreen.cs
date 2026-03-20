@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
@@ -23,61 +24,97 @@ namespace Switchie
         public void OnPaint(PaintEventArgs e)
         {
             Graphics g = e.Graphics;
-
             Window[] windows;
-            windows = Form.Windows.Where(x => x.VirtualDesktopIndex == VirtualDesktop.VirtualDesktopIndex).OrderBy(x => x.ZOrder).ToArray();
 
-            /*
-            if (Form.WindowRenderMode == MainForm.RenderMode.Thumbnails)
+            // For windows render mode, all windows have to be sorted in z-order to draw from back to front
+            if (Form.WindowRenderMode == MainForm.RenderMode.Windows)
             {
-                
+                windows = Form.Windows.Where(x => x.VirtualDesktopIndex == VirtualDesktop.VirtualDesktopIndex).OrderBy(x => x.ZOrder).ToArray();
             }
+            // Otherwise order should stay the same (using process id)
             else
             {
-                windows = Form.Windows.Where(x => x.VirtualDesktopIndex == VirtualDesktop.VirtualDesktopIndex).OrderByDescending(x => x.ZOrder).ToArray();
-            }*/
+                var windowsEnumerated = Form.Windows.Where(x => x.VirtualDesktopIndex == VirtualDesktop.VirtualDesktopIndex);
 
-            int hSpace = Size.Width / windows.Length;
-            int vSpace = Size.Height / windows.Length;
+                // Order by process is similar to order is taskbar, as long as the user doesn't move them
+                windows = windowsEnumerated.OrderBy(x => x.ProcessID).ToArray();
+            }
+            if (windows.Length == 0) return;
 
-            // Renders the thumbnails of all windows for all desktops from back to front
-            // -> TODO: Different rendering modes, like when all windows are maximized (on smaller screens typical)
-            /*
-            WINDOWPLACEMENT placement = new WINDOWPLACEMENT();
-            placement.length = Marshal.SizeOf(placement);
-            GetWindowPlacement(w.Handle, ref placement);
-            */
+            int iconPaddingX = Form.IconPaddingX;
+            int iconPaddingY = Form.IconPaddingY;
+            int border = Form.PaddingSize;
 
-            int wnum = windows.Length - 1;
-            foreach (var w in windows)
+            // Reduce available content space by border
+            int width = Size.Width - border * 2;
+            int height = Size.Height - border * 2;
+
+            // Parition the screen equally for the Icons
+            int hSpace = width / windows.Length;
+            int lineBreak = windows.Length;
+
+            // Support a second line of icons if we run out of space horizontally
+            if (hSpace < windows[0].Icon.Width + iconPaddingX)
             {
-                Color fillColor = w.IsActive ? Form.ActiveWindowColor : Form.WindowColor;
-                Color borderColor = w.IsActive ? Form.ActiveWindowBorderColor : Form.WindowBorderColor;
+                lineBreak = windows.Length / 2 + 1;
+                hSpace = width / lineBreak;
+            }
 
-                if (Screen.FromHandle(w.Handle).DeviceName == AttachedScreen.DeviceName)
+            int wcounter = 0;
+            int wnum = windows.Length - 1;
+            foreach (var wnd in windows)
+            {
+                Color fillColor = wnd.IsActive ? Form.ActiveWindowColor : Form.WindowColor;
+                Color borderColor = wnd.IsActive ? Form.ActiveWindowBorderColor : Form.WindowBorderColor;
+
+                if (Screen.FromHandle(wnd.Handle).DeviceName == AttachedScreen.DeviceName)
                 {
                     if (Form.WindowRenderMode == MainForm.RenderMode.Icons)
                     {
-                        // TODO: Window selection doesn't work in this mode 
-                        // TODO: There should to make it looking like in the original (user preferences)
-                        // Window rectangle fill
-                        /*
-                        g.FillRectangle(
-                            new SolidBrush(fillColor),
-                            new Rectangle(Location.X + wnum * hSpace, 0, hSpace, Size.Height));*/
+                        int yPos;
+                        int xPos = border / 2 + Location.X + wcounter * hSpace;
 
-                        g.DrawImage(w.Icon, new Point(
-                            Location.X + wnum * hSpace + hSpace / 2 - w.Icon.Width / 2,
-                            (Size.Height / 2) - w.Icon.Height / 2
-                        ));
+                        if (lineBreak == windows.Length)
+                        {
+                            yPos = border / 2 + height / 2 - wnd.Icon.Height / 2;
+                        }
+                        else
+                        {
+                            if (wcounter < lineBreak)
+                            {
+                                yPos = border / 2 + height / 4 - (wnd.Icon.Height + iconPaddingY) / 2;
+                            }
+                            else
+                            {
+                                xPos -= lineBreak * hSpace;
+                                yPos = border / 2 + height / 4 + wnd.Icon.Height + iconPaddingY;
+                            }
+                        }
+
+                        var areaYPadding = iconPaddingY >= 0 ? iconPaddingY : 0;
+
+                        var selectionArea = new Rectangle(
+                            xPos,
+                            yPos - areaYPadding,
+                            hSpace,
+                            wnd.Icon.Height + areaYPadding * 2);
+
+                        WindowAreas[wnd.Handle] = selectionArea;
+
+                        if (wnd.IsActive)
+                        {
+                            g.FillRectangle(new SolidBrush(fillColor), selectionArea);
+                        }
+
+                        g.DrawImage(wnd.Icon, new Point(selectionArea.X + hSpace / 2 - wnd.Icon.Width / 2, yPos));
                     }
                     else
                     {
-                        var x = w.Dimensions.X;
-                        var y = w.Dimensions.Y;
+                        var x = wnd.Dimensions.X;
+                        var y = wnd.Dimensions.Y;
                         x -= AttachedScreen.Bounds.Left;
                         y -= AttachedScreen.Bounds.Top;
-                        var area = new Rectangle(x, y, w.Dimensions.Width - Form.BorderSize, w.Dimensions.Height - Form.BorderSize);
+                        var area = new Rectangle(x, y, wnd.Dimensions.Width - Form.BorderSize, wnd.Dimensions.Height - Form.BorderSize);
 
                         // Scale rectangles down to the thumbnail's desired size
                         var ar = Helpers.AspectRatioResize(new Size(AttachedScreen.Bounds.Width, AttachedScreen.Bounds.Height), 0, Form.PagerHeight);
@@ -91,7 +128,7 @@ namespace Switchie
 
                         area.X += Location.X;
                         area.Y += Location.Y;
-                        WindowAreas[w.Handle] = area;
+                        WindowAreas[wnd.Handle] = area;
 
                         // Window rectangle fill
                         g.FillRectangle(
@@ -101,9 +138,9 @@ namespace Switchie
                         // Window icon
                         var oldBounds = e.Graphics.ClipBounds;
                         e.Graphics.Clip = new Region(area);
-                        g.DrawImage(w.Icon, new Point(
-                            (area.X + area.Width / 2) - w.Icon.Width / 2,
-                            (area.Y + area.Height / 2) - w.Icon.Height / 2
+                        g.DrawImage(wnd.Icon, new Point(
+                            (area.X + area.Width / 2) - wnd.Icon.Width / 2,
+                            (area.Y + area.Height / 2) - wnd.Icon.Height / 2
                         ));
                         e.Graphics.Clip = new Region(oldBounds);
 
@@ -113,6 +150,7 @@ namespace Switchie
                             new Rectangle(area.X, area.Y, area.Width - (Form.BorderSize), area.Height - (Form.BorderSize)));
                     }
                     wnum--;
+                    wcounter++;
                 }
                 else
                     continue;

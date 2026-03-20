@@ -1,5 +1,4 @@
-﻿using Microsoft.Win32;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -9,56 +8,64 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Windows.Interop;
 
 namespace Switchie
 {
-    // Main Application Form
+    // Pager main application form
     public class MainForm : Form
     {
-        private string version = "1.2.0";
+        private string version = "1.3.3";
 
-        // This works only when the pinning is manually done by the user after application has started (because auto pinning will always fail)
-        private bool _showAppInTaskbar = true;
-        
+        // --- Internal Application State ---
         private bool _isAppPinned = false;
+        //private bool _forceAppAlwaysOnTop = false;
+
         private int _activeDesktopIndex = 0;
         private int _currentDesktopCount = 0;
-        private bool _forceAlwaysOnTop = false;
-        private string _windowsHash = string.Empty;
 
+        private string _windowsHash = string.Empty;
+        public ConcurrentBag<Window> Windows = new ConcurrentBag<Window>();
         private readonly List<VirtualDesktop> _virtualDesktops = new List<VirtualDesktop>();
 
         private Point dragOffset;
         public bool IsDraggingWindow { get; set; }
 
-        private readonly int primaryUpdateDelay = 200;
-        private readonly int secondaryUpdateDelay = 500;
+        // --- Application Settings: Static ---
+        public int BorderSize { get; } = 1;
 
-        public int BorderSize { get; set; } = 1;
-        public int PagerHeight { get; set; } = 40;
-        public int VirtualDesktopSpacing { get; set; } = 4;
+        // --- Application Settings: Configurable by user ---
+        private AppSettings _appSettings;
 
-        public Color DesktopColor { get; set; } = Color.FromArgb(32, 32, 32); // Background inbetween desktops
         public Color BackgroundColor { get; set; } = Color.FromArgb(64, 64, 64);
-        public Color WindowColor { get; set; } = Color.FromArgb(255, Color.Gray);
-        public Color WindowBorderColor { get; set; } = Color.Silver;
 
-        public Color ActiveWindowColor { get; set; } = Color.FromArgb(255, Color.Silver);
-        public Color ActiveWindowBorderColor { get; set; } = Color.White;
+        public Color DesktopBorderColor { get; set; } = Color.FromArgb(32, 32, 32);
         public Color ActiveDesktopBorderColor { get; set; } = Color.LightBlue;
+        public enum BorderStyle { Box, Underline };
+        public BorderStyle DesktopBorderStyle { get; set; } = BorderStyle.Box;
 
-        public ConcurrentBag<Window> Windows = new ConcurrentBag<Window>();
+        public Color WindowColor { get; set; } = Color.FromArgb(255, Color.Gray);
+        public Color ActiveWindowColor { get; set; } = Color.FromArgb(255, Color.Silver);
 
-        private readonly WinEventHook.WinEventDelegate _proc;
-        private readonly IntPtr _hook;
+        public Color WindowBorderColor { get; set; } = Color.Silver;
+        public Color ActiveWindowBorderColor { get; set; } = Color.White;
 
-        public enum RenderMode
-        {
-            Thumbnails,
-            Icons
-        }
+        public int PagerHeight { get; set; } = 40; // Width is calculated from that
 
-        public RenderMode WindowRenderMode { get; set; } = RenderMode.Thumbnails;
+        public enum RenderMode { Windows, Icons }
+        public RenderMode WindowRenderMode { get; set; } = RenderMode.Windows;
+
+        public int PaddingSize { get; set; } = 1;
+        public int IconPaddingX { get; set; } = 0;
+        public int IconPaddingY { get; set; } = 0;
+
+        private int PrimaryUpdateDelay { get; set; } = 200;
+        private int SecondaryUpdateDelay { get; set; } = 500;
+
+        // This works only when the pinning is manually done by the user after application has started
+        // (because auto pinning will always fail)
+        // -> Currently not configurable
+        private bool ShowAppInTaskbar { get; set; } = true;
 
         public MainForm()
         {
@@ -76,11 +83,15 @@ namespace Switchie
             TopMost = true;
             AllowDrop = true;
 
+            _appSettings = AppSettingsStore.Load();
+            ApplySettings(_appSettings, false);
+
             BackColor = BackgroundColor;
             FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
-            Icon = new System.Drawing.Icon(new MemoryStream(Helpers.GetResourceFromAssembly(typeof(Program), "Switchie.Resources.icon.ico")));
+            Icon = new System.Drawing.Icon(
+                new MemoryStream(Helpers.GetResourceFromAssembly(typeof(Program), "Switchie.Resources.icon.ico")));
 
-            ShowInTaskbar = _showAppInTaskbar;
+            ShowInTaskbar = ShowAppInTaskbar;
 
             // Collect all virtual desktops and add mouse event listeners to them
             GetVirtualDesktopsAndAddMouseHandlers(_virtualDesktops);
@@ -91,57 +102,24 @@ namespace Switchie
             MaximumSize = Size;
             ClientSize = Size;
 
-            WindowRenderMode = (RenderMode)RegistryAccess.getRenderMode();
-
             var storedLocation = RegistryAccess.RestoreLocation();
-            Location = storedLocation ?? getDefaultLocation();
+            Location = storedLocation ?? GetDefaultLocation();
 
             ResumeLayout(false);
             Shown += OnShown;
             MouseUp += OnMouseUp;
             MouseDown += OnMouseDown;
             MouseMove += OnMouseMove;
-
-            // Start global Windows Event Hook to bring app window to front again when covered by the taskbar before
-            // -> only useful whenn overlapping with taskbar is required
-            // -> currently not used because of overlapping detection
-            //_proc = WinEventCallback;
-
-            /*_hook = WinEventHook.SetWinEventHook(
-                WinEventHook.EVENT_SYSTEM_FOREGROUND,
-                WinEventHook.EVENT_SYSTEM_FOREGROUND,
-                IntPtr.Zero, _proc, 0, 0,
-                WinEventHook.WINEVENT_OUTOFCONTEXT);*/
-        }
-
-        private void WinEventCallback(IntPtr hWinEventHook, uint eventType, IntPtr hwnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime)
-        {
-            var className = new StringBuilder(256);
-            IntPtr nRet = WinAPI.GetClassName(hwnd, className, className.Capacity);
-            Debug.WriteLine("Hook called for " + className);
-
-            // Ingore own window
-            if (hwnd == Handle)
-                return;
-
-            // Currently we pay only attention to Shell TrayWnd events
-            if (className.ToString() == "Shell_TrayWnd")
-            {
-                Task.Delay(50).ContinueWith(_ =>
-                {
-                    if (!IsDisposed)
-                    {
-                        BeginInvoke((Action)(() => WindowManager.RestoreWindow(Handle)));
-                    }
-                });
-            }
         }
 
         // Default app window location: Centered and above Taskbar
-        private Point getDefaultLocation() => new Point((Screen.PrimaryScreen.Bounds.Width / 2) - (Size.Width / 2), Screen.PrimaryScreen.WorkingArea.Bottom - Size.Height);
+        private Point GetDefaultLocation() => new Point(
+                (Screen.PrimaryScreen.Bounds.Width / 2) - (Size.Width / 2),
+                Screen.PrimaryScreen.WorkingArea.Bottom - Size.Height
+        );
 
         // App Window covering detection: Currently only by its center point
-        private bool isCovered()
+        private bool IsCovered()
         {
             var rect = this.Bounds;
             var point = new WinAPI.POINT
@@ -153,7 +131,7 @@ namespace Switchie
             return hwndAtPoint != this.Handle;
         }
 
-        private bool hasDesktopCountChanged() => _currentDesktopCount != WindowsVirtualDesktop.GetInstance().Count;
+        private bool HasDesktopCountChanged() => _currentDesktopCount != WindowsVirtualDesktop.GetInstance().Count;
 
         private void ResetVirtualDesktop()
         {
@@ -207,6 +185,7 @@ namespace Switchie
                     {
                         try
                         {
+                            // Probably now required anymore, now that we have covering detection
                             //if (_forceAlwaysOnTop) WindowManager.SetAlwaysOnTop(Handle, _forceAlwaysOnTop);
 
                             // Change Detection via Hash (calculated on basic parameters of all opened windows)
@@ -231,13 +210,13 @@ namespace Switchie
                         catch { }
                     }));
 
-                    // Refresh rate for thumbnails by default 1, but 100 is also fine, otherwise the
-                    // hash calculation and string concatenations happens every ms
-                    await Task.Delay(primaryUpdateDelay);
+                    // So we don't waste too many CPU cycles
+                    await Task.Delay(PrimaryUpdateDelay);
                 }
             });
 
-            // Secondary application loop for pinning the app, bringing it to front when hidden by some other window and detect desktop count changes
+            // Secondary application loop for pinning the app, bringing it to front when hidden by some other window
+            // and detect desktop count changes
             // -> only pinned apps are visible on all virtual desktops, which is a requirement for this app 
             Task.Run(async () =>
             {
@@ -246,19 +225,19 @@ namespace Switchie
                     Invoke(new Action(() =>
                     {
                         // Check if window is covered shoulf be fine with every 500ms 
-                        if (isCovered())
+                        if (IsCovered())
                         {
                             WindowManager.RestoreWindow(Handle);
                         }
 
-                        if (hasDesktopCountChanged())
+                        if (HasDesktopCountChanged())
                         {
                             ResetVirtualDesktop();
                         }
 
                         // This should only be the case at start up, right
-                        if (_showAppInTaskbar && !_isAppPinned) { 
-                        
+                        if (ShowAppInTaskbar && !_isAppPinned)
+                        {
                             try
                             {
                                 // Note: The internal Divided by Zero error happens here
@@ -269,13 +248,14 @@ namespace Switchie
                         }
                         try
                         {
-                            _activeDesktopIndex = WindowsVirtualDesktopManager.GetInstance().FromDesktop(WindowsVirtualDesktop.GetInstance().Current);
+                            _activeDesktopIndex = WindowsVirtualDesktopManager.GetInstance()
+                                .FromDesktop(WindowsVirtualDesktop.GetInstance().Current);
                             Windows = new ConcurrentBag<Window>(WindowManager.GetOpenWindows());
                             //Invalidate();
                         }
                         catch { }
                     }));
-                    await Task.Delay(secondaryUpdateDelay);
+                    await Task.Delay(SecondaryUpdateDelay);
                 }
             });
         }
@@ -310,20 +290,31 @@ namespace Switchie
 
         private void ShowContextMenu()
         {
-            _forceAlwaysOnTop = false;
+            //_forceAppAlwaysOnTop = false;
             ContextMenuStrip menu = new ContextMenuStrip();
 
+            Helpers.AddMenuItem(this, menu,
+                 new ToolStripMenuItem()
+                 {
+                     Text = "Toggle Render Mode",
+                     Image = Helpers.CreateGlyphBitmap("↔")
+                 },
+                 () =>
+                 {
+                     WindowRenderMode = WindowRenderMode == RenderMode.Icons ? RenderMode.Windows : RenderMode.Icons;
+                     _appSettings.RenderMode = (int)WindowRenderMode;
+                     AppSettingsStore.Save(_appSettings);
+                     Invalidate();
+                 });
+
             // --- Position related ---
-            ToolStripDropDown dropDown = new ToolStripDropDown();
-            ToolStripDropDownButton dropDownButton = new ToolStripDropDownButton
+            ToolStripMenuItem positionMenu = new ToolStripMenuItem()
             {
                 Text = "Position",
-                AutoToolTip = false,
-                DropDown = dropDown,
-                DropDownDirection = ToolStripDropDownDirection.Right
+                Image = Helpers.CreateGlyphBitmap("⌖")
             };
 
-            ToolStripButton buttonRestorePos = new ToolStripButton("Restore", null, (s, ev) =>
+            ToolStripMenuItem buttonRestorePos = new ToolStripMenuItem("Restore", null, (s, ev) =>
             {
                 var storedLocation = RegistryAccess.RestoreLocation();
                 if (storedLocation != null)
@@ -332,65 +323,203 @@ namespace Switchie
                 }
             });
 
-            ToolStripButton buttonSavePos = new ToolStripButton("Save", null, (s, ev) =>
+            ToolStripMenuItem buttonSavePos = new ToolStripMenuItem("Save", null, (s, ev) =>
             {
                 RegistryAccess.SaveLocation(Location);
             });
 
-            ToolStripButton buttonDefaultPos = new ToolStripButton("Default", null, (s, ev) =>
+            ToolStripMenuItem buttonDefaultPos = new ToolStripMenuItem("Default", null, (s, ev) =>
             {
-                Location = getDefaultLocation();
+                Location = GetDefaultLocation();
             });
-            dropDown.Items.AddRange(new ToolStripItem[] { buttonRestorePos, buttonSavePos, buttonDefaultPos });
-            menu.Items.Add(dropDownButton);
+
+            positionMenu.DropDownItems.AddRange(new ToolStripItem[] { buttonRestorePos, buttonSavePos, buttonDefaultPos });
+            menu.Items.Add(positionMenu);
 
             // --- Aditional menu entries ---
             Helpers.AddMenuItem(this, menu,
                 new ToolStripMenuItem()
                 {
-                    Text = "Reset",
-                    ToolTipText = "Reinitialize Virtual Desktops"
+                    Text = "Settings",
+                    Image = Helpers.CreateGlyphBitmap("⚙")
                 },
                 () =>
                 {
-                    ResetVirtualDesktop();
+                    OpenSettingsDialog();
                 });
 
             Helpers.AddMenuItem(this, menu,
                 new ToolStripMenuItem()
                 {
-                    Text = "About"
+                    Text = "About",
+                    Image = Helpers.CreateGlyphBitmap("ℹ")
                 },
                 () =>
                 {
-                    MessageBox.Show($"Switchie{Environment.NewLine}v{version}{Environment.NewLine}{Environment.NewLine}Made by darkguy2008", "About");
-                    _forceAlwaysOnTop = true;
+                    OpenAboutDialog();
+                    //_forceAppAlwaysOnTop = true;
                 });
 
             Helpers.AddMenuItem(this, menu,
                 new ToolStripMenuItem()
                 {
-                    Text = "Toggle Render Mode"
-                },
-                () =>
-                {
-                    WindowRenderMode = WindowRenderMode == RenderMode.Icons ? RenderMode.Thumbnails : RenderMode.Icons;
-                    RegistryAccess.saveRenderMode((int)WindowRenderMode);
-                    Invalidate();
-                });
-
-            Helpers.AddMenuItem(this, menu,
-                new ToolStripMenuItem()
-                {
-                    Text = "Exit"
+                    Text = "Exit",
+                    Image = Helpers.CreateGlyphBitmap("✕")
                 },
                 () =>
                 {
                     Environment.Exit(1);
                 });
 
-            menu.Opened += (ss, ee) => _forceAlwaysOnTop = false;
+            //menu.Opened += (ss, ee) => _forceAppAlwaysOnTop = false;
             menu.Show(this, PointToClient(Cursor.Position));
+        }
+
+        private void OpenSettingsDialog()
+        {
+            var settingsWindow = new AppSettingsWindow(_appSettings);
+            new WindowInteropHelper(settingsWindow) { Owner = Handle };
+
+            bool? result = settingsWindow.ShowDialog();
+            if (result == true)
+            {
+                _appSettings = settingsWindow.Settings;
+                ApplySettings(_appSettings, true);
+            }
+        }
+
+        private void OpenAboutDialog()
+        {
+            using (var aboutDialog = new Form())
+            {
+                aboutDialog.Text = "About Switchie";
+                aboutDialog.FormBorderStyle = FormBorderStyle.FixedDialog;
+                aboutDialog.StartPosition = FormStartPosition.CenterParent;
+                aboutDialog.MaximizeBox = false;
+                aboutDialog.MinimizeBox = false;
+                aboutDialog.ShowInTaskbar = false;
+                aboutDialog.ClientSize = new Size(420, 340);
+                aboutDialog.BackColor = Color.White;
+
+                var iconBox = new PictureBox
+                {
+                    Size = new Size(96, 96),
+                    SizeMode = PictureBoxSizeMode.Zoom,
+                    Location = new Point((aboutDialog.ClientSize.Width - 96) / 2, 20)
+                };
+
+                try
+                {
+                    using (var iconStream = new MemoryStream(
+                        Helpers.GetResourceFromAssembly(typeof(Program), "Switchie.Resources.icon.png")))
+                    using (var pngImage = Image.FromStream(iconStream))
+                    {
+                        iconBox.Image = new Bitmap(pngImage);
+                    }
+                }
+                catch
+                {
+                    iconBox.Image = Icon?.ToBitmap();
+                }
+
+                var appNameLabel = new Label
+                {
+                    AutoSize = false,
+                    Width = aboutDialog.ClientSize.Width,
+                    Height = 32,
+                    Location = new Point(0, 126),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Font = new Font("Segoe UI", 16, FontStyle.Bold),
+                    Text = "Switchie"
+                };
+
+                var versionLabel = new Label
+                {
+                    AutoSize = false,
+                    Width = aboutDialog.ClientSize.Width,
+                    Height = 24,
+                    Location = new Point(0, 160),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Font = new Font("Segoe UI", 10, FontStyle.Regular),
+                    ForeColor = Color.DimGray,
+                    Text = $"Version {version}"
+                };
+
+                var authorLabel = new Label
+                {
+                    AutoSize = false,
+                    Width = aboutDialog.ClientSize.Width - 40,
+                    Height = 24,
+                    Location = new Point(20, 202),
+                    TextAlign = ContentAlignment.MiddleLeft,
+                    Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                    Text = "Main author: darkguy2008"
+                };
+
+                var contributorsLabel = new Label
+                {
+                    AutoSize = false,
+                    Width = aboutDialog.ClientSize.Width - 40,
+                    Height = 70,
+                    Location = new Point(20, 226),
+                    TextAlign = ContentAlignment.TopLeft,
+                    Font = new Font("Segoe UI", 9, FontStyle.Regular),
+                    Text = "Contributors:\n• Robbson" +
+                           "\n• DARKGuy (Alemar)"
+                };
+
+                var closeButton = new Button
+                {
+                    Text = "Close",
+                    Width = 100,
+                    Height = 30,
+                    Location = new Point((aboutDialog.ClientSize.Width - 100) / 2, 298),
+                    DialogResult = DialogResult.OK
+                };
+
+                aboutDialog.AcceptButton = closeButton;
+                aboutDialog.CancelButton = closeButton;
+
+                aboutDialog.Controls.Add(iconBox);
+                aboutDialog.Controls.Add(appNameLabel);
+                aboutDialog.Controls.Add(versionLabel);
+                aboutDialog.Controls.Add(authorLabel);
+                aboutDialog.Controls.Add(contributorsLabel);
+                aboutDialog.Controls.Add(closeButton);
+
+                aboutDialog.ShowDialog(this);
+            }
+        }
+
+        private void ApplySettings(AppSettings settings, bool persist)
+        {
+            PagerHeight = settings.PagerHeight;
+            PaddingSize = settings.PaddingSize;
+            IconPaddingX = settings.IconPaddingX;
+            IconPaddingY = settings.IconPaddingY;
+
+            BackgroundColor = settings.BackgroundColor;
+            DesktopBorderColor = settings.DesktopBorderColor;
+            ActiveDesktopBorderColor = settings.ActiveDesktopBorderColor;
+            WindowColor = settings.WindowColor;
+            ActiveWindowColor = settings.ActiveWindowColor;
+            WindowBorderColor = settings.WindowBorderColor;
+            ActiveWindowBorderColor = settings.ActiveWindowBorderColor;
+            DesktopBorderStyle = settings.DesktopBorderStyle == 1 ? BorderStyle.Underline : BorderStyle.Box;
+
+            PrimaryUpdateDelay = settings.PrimaryUpdateDelay;
+            SecondaryUpdateDelay = settings.SecondaryUpdateDelay;
+
+            WindowRenderMode = settings.RenderMode == 1 ? RenderMode.Icons : RenderMode.Windows;
+
+            BackColor = BackgroundColor;
+
+            if (persist)
+            {
+                AppSettingsStore.Save(settings);
+                ResetVirtualDesktop();
+                Invalidate();
+            }
         }
 
         protected override void OnPaint(PaintEventArgs e)

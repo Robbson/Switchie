@@ -7,17 +7,15 @@ using System.Windows.Forms;
 
 namespace Switchie
 {
-    // Represents a Virtual Desktop Thumbnail in the Pager
+    // Represents a virtual desktop mini view in the pager
     public class VirtualDesktop
     {
         public MainForm Form { get; set; }
-
         public Size Size { get; set; }
-
         public Point Location { get; set; }
 
         public int VirtualDesktopIndex { get; set; }
-
+        private readonly List<VirtualDesktopScreen> _screens = new List<VirtualDesktopScreen>();
         public bool IsCurrentActiveDesktop
         {
             get => WindowsVirtualDesktopManager.GetInstance().FromDesktop(WindowsVirtualDesktop.GetInstance().Current) == VirtualDesktopIndex;
@@ -25,12 +23,11 @@ namespace Switchie
 
         private DragDropData _dragDropData;
         private Rectangle dragBoxFromMouseDown;
-        private List<VirtualDesktopScreen> _screens = new List<VirtualDesktopScreen>();
 
         private bool IsInsideBounds(Point p) => IsInsideBounds(p.X, p.Y);
 
-        private bool IsInsideBounds(int x, int y) =>
-            x >= Location.X && x < (Location.X + Size.Width) && y >= Location.Y && y < (Location.Y + Size.Height);
+        private bool IsInsideBounds(int x, int y)
+            => x >= Location.X && x < (Location.X + Size.Width) && y >= Location.Y && y < (Location.Y + Size.Height);
 
         public VirtualDesktop(int virtualDesktopIndex, MainForm form, Point location)
         {
@@ -55,21 +52,25 @@ namespace Switchie
 
         private Window GetWindowUnderCursor(Point mousePosition)
         {
-            if (Form.WindowRenderMode == MainForm.RenderMode.Thumbnails)
+            var coord = Form.PointToClient(mousePosition);
+
+            // For windows render mode, we search across all screens for the clicked window in z-order from front to back,
+            // otherwise order should stay the same (using process id)
+            // -> TODO: this doesn't work reliably for the Icons mode when there are more windows of the same application
+            //    because they all share the same process id
+            var windows = Form.WindowRenderMode == MainForm.RenderMode.Windows 
+                ? Form.Windows.Where(x => x.VirtualDesktopIndex == VirtualDesktopIndex).OrderByDescending(x => x.ZOrder)
+                : Form.Windows.Where(w => w.VirtualDesktopIndex == VirtualDesktopIndex).OrderBy(w => w.ProcessID);
+
+            foreach (var w in windows)
             {
-                var coord = Form.PointToClient(mousePosition);
-                var windows = Form.Windows.Where(x => x.VirtualDesktopIndex == VirtualDesktopIndex).OrderByDescending(x => x.ZOrder);
-                foreach (var w in windows)
-                    if (_screens.Any(x => x.WindowAreas.ContainsKey(w.Handle) && x.WindowAreas[w.Handle].Contains(mousePosition)))
-                        if (_screens.Select(x => x.AttachedScreen.DeviceName).Contains(Screen.FromHandle(w.Handle).DeviceName))
-                            return w;
-                return null;
+                if (_screens.Any(x => x.WindowAreas.ContainsKey(w.Handle) && x.WindowAreas[w.Handle].Contains(mousePosition)))
+                    if (_screens.Select(x => x.AttachedScreen.DeviceName).Contains(Screen.FromHandle(w.Handle).DeviceName))
+                    {
+                        return w;
+                    }
             }
-            else
-            {
-                //var windows = Form.Windows.Where(x => x.VirtualDesktopIndex == VirtualDesktopIndex).OrderByDescending(x => x.ZOrder);
-                return null;
-            }
+            return null;
         }
 
         public void OnPaint(PaintEventArgs e)
@@ -77,15 +78,25 @@ namespace Switchie
             _screens.ForEach(x => x.OnPaint(e));
 
             Graphics g = e.Graphics;
-            Color desktopBorderColor = IsCurrentActiveDesktop ? Form.ActiveDesktopBorderColor : Form.DesktopColor;
+            Color desktopBorderColor = IsCurrentActiveDesktop ? Form.ActiveDesktopBorderColor : Form.DesktopBorderColor;
 
-            // Just underline the active desktop
-            // -> TODO: Doesn't work if there is no window on the desktop
-
-            g.FillRectangle(
-                new SolidBrush(desktopBorderColor),
-                new Rectangle(Location.X, Size.Height-1, Size.Width, Size.Height)
-            );
+            if (Form.DesktopBorderStyle == MainForm.BorderStyle.Box)
+            {
+                // Draw a border around the active desktop
+                g.DrawRectangle(
+                    new Pen(new SolidBrush(desktopBorderColor), Form.BorderSize),
+                    new Rectangle(Location.X, Location.Y, Size.Width - (Form.BorderSize), Size.Height - (Form.BorderSize))
+                );
+            }
+            else
+            {
+                // Just underline the active desktop
+                // -> TODO: Doesn't work if there is no window on the desktop
+                g.FillRectangle(
+                    new SolidBrush(desktopBorderColor),
+                    new Rectangle(Location.X, Size.Height - 1, Size.Width, Size.Height)
+             );
+            }
         }
 
         public void OnMouseUp(object sender, MouseEventArgs e)
@@ -106,20 +117,12 @@ namespace Switchie
                 var w = GetWindowUnderCursor(e.Location);
                 if (w != null)
                 {
-                    // Bring a window into front by clicking on its miniature
-                    // -> doesn't work yet for the alternative mode, probably because of GetWindowUnderCursor() 
+                    // Bring a window into front by clicking on its miniature / icon
+                    // -> only when it's already the active desktop, which makes desktop switches smoother
+                    //    without touching the last window z-order
                     if (IsCurrentActiveDesktop)
                     {
                         WinAPI.SetForegroundWindow(w.Handle);
-                    }
-                    else
-                    {
-                        // If we come from another desktop we delay the activation so the desktop change can be applied before
-                        // (otherwise we would scroll to the target desktop first)
-                        Task.Delay(300).ContinueWith(_ =>
-                        {
-                            WinAPI.SetForegroundWindow(w.Handle);
-                        });
                     }
 
                     _dragDropData = new DragDropData()
@@ -128,7 +131,8 @@ namespace Switchie
                         DraggedWindow = w
                     };
                     Size dragSize = SystemInformation.DragSize;
-                    dragBoxFromMouseDown = new Rectangle(new Point(e.X - (dragSize.Width / 2), e.Y - (dragSize.Height / 2)), dragSize);
+                    dragBoxFromMouseDown = new Rectangle(
+                        new Point(e.X - (dragSize.Width / 2), e.Y - (dragSize.Height / 2)), dragSize);
                 }
                 else
                     dragBoxFromMouseDown = Rectangle.Empty;
@@ -168,5 +172,4 @@ namespace Switchie
                 e.Effect = DragDropEffects.Move;
         }
     }
-
 }
