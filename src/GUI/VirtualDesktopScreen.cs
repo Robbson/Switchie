@@ -61,8 +61,9 @@ namespace Switchie
                         // TODO: Window selection doesn't work in this mode 
                         // TODO: There should to make it looking like in the original (user preferences)
                         // Window rectangle fill
-                        /*
-                        g.FillRectangle(
+                        
+                        // Rectangle for the selected icon, currently fills to whole height
+                        /*g.FillRectangle(
                             new SolidBrush(fillColor),
                             new Rectangle(Location.X + wnum * hSpace, 0, hSpace, Size.Height));*/
 

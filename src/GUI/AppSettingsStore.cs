@@ -16,12 +16,21 @@ namespace Switchie
                 return key == null ? defaults : new AppSettings
                 {
                     RenderMode = ReadInt(key, "RenderMode", defaults.RenderMode),
+                    DesktopBorderStyle = ReadInt(key, "DesktopBorderStyle", defaults.DesktopBorderStyle),
                     PagerHeight = ReadInt(key, "PagerHeight", defaults.PagerHeight),
-                    PrimaryUpdateDelay = ReadInt(key, "PrimaryUpdateDelay", defaults.PrimaryUpdateDelay),
-                    SecondaryUpdateDelay = ReadInt(key, "SecondaryUpdateDelay", defaults.SecondaryUpdateDelay),
-                    DesktopColor = ReadColor(key, "DesktopColor", defaults.DesktopColor),
+
                     BackgroundColor = ReadColor(key, "BackgroundColor", defaults.BackgroundColor),
-                    ActiveDesktopBorderColor = ReadColor(key, "ActiveDesktopBorderColor", defaults.ActiveDesktopBorderColor)
+
+                    DesktopBorderColor = ReadColor(key, "DesktopBorderColor", defaults.DesktopBorderColor),
+                    ActiveDesktopBorderColor = ReadColor(key, "ActiveDesktopBorderColor", defaults.ActiveDesktopBorderColor),
+
+                    WindowColor = ReadColor(key, "WindowColor", defaults.WindowColor),
+                    ActiveWindowColor = ReadColor(key, "ActiveWindowColor", defaults.ActiveWindowColor),
+                    WindowBorderColor = ReadColor(key, "WindowBorderColor", defaults.WindowBorderColor),
+                    ActiveWindowBorderColor = ReadColor(key, "ActiveWindowBorderColor", defaults.ActiveWindowBorderColor),
+
+                    PrimaryUpdateDelay = ReadInt(key, "PrimaryUpdateDelay", defaults.PrimaryUpdateDelay),
+                    SecondaryUpdateDelay = ReadInt(key, "SecondaryUpdateDelay", defaults.SecondaryUpdateDelay)
                 };
             }
         }
@@ -32,12 +41,21 @@ namespace Switchie
             {
                 if (key == null) return;
                 key.SetValue("RenderMode", settings.RenderMode, RegistryValueKind.DWord);
+                key.SetValue("DesktopBorderStyle", settings.DesktopBorderStyle, RegistryValueKind.DWord);
                 key.SetValue("PagerHeight", settings.PagerHeight, RegistryValueKind.DWord);
+
+                key.SetValue("BackgroundColor", settings.BackgroundColor.ToArgb(), RegistryValueKind.DWord);
+
+                key.SetValue("DesktopBorderColor", settings.DesktopBorderColor.ToArgb(), RegistryValueKind.DWord);
+                key.SetValue("ActiveDesktopBorderColor", settings.ActiveDesktopBorderColor.ToArgb(), RegistryValueKind.DWord);
+
+                key.SetValue("WindowColor", settings.WindowColor.ToArgb(), RegistryValueKind.DWord);
+                key.SetValue("ActiveWindowColor", settings.ActiveWindowColor.ToArgb(), RegistryValueKind.DWord);
+                key.SetValue("WindowBorderColor", settings.WindowBorderColor.ToArgb(), RegistryValueKind.DWord);
+                key.SetValue("ActiveWindowBorderColor", settings.ActiveWindowBorderColor.ToArgb(), RegistryValueKind.DWord);
+
                 key.SetValue("PrimaryUpdateDelay", settings.PrimaryUpdateDelay, RegistryValueKind.DWord);
                 key.SetValue("SecondaryUpdateDelay", settings.SecondaryUpdateDelay, RegistryValueKind.DWord);
-                key.SetValue("DesktopColor", settings.DesktopColor.ToArgb(), RegistryValueKind.DWord);
-                key.SetValue("BackgroundColor", settings.BackgroundColor.ToArgb(), RegistryValueKind.DWord);
-                key.SetValue("ActiveDesktopBorderColor", settings.ActiveDesktopBorderColor.ToArgb(), RegistryValueKind.DWord);
             }
         }
 

@@ -15,7 +15,7 @@ namespace Switchie
     // Pager main application form
     public class MainForm : Form
     {
-        private string version = "1.2.0";
+        private string version = "1.3.0";
 
         // --- Internal Application State ---
         private bool _isAppPinned = false;
@@ -31,26 +31,24 @@ namespace Switchie
         private Point dragOffset;
         public bool IsDraggingWindow { get; set; }
 
-        private readonly WinEventHook.WinEventDelegate _proc;
-        private readonly IntPtr _hook;
-
         // --- Application Settings: Static ---
         public int BorderSize { get; } = 1;
 
         // --- Application Settings: Configurable by user ---
         private AppSettings _appSettings;
 
-        public Color DesktopColor { get; set; } = Color.FromArgb(32, 32, 32); // Background inbetween desktops
         public Color BackgroundColor { get; set; } = Color.FromArgb(64, 64, 64);
-        public Color WindowColor { get; set; } = Color.FromArgb(255, Color.Gray);
-        public Color WindowBorderColor { get; set; } = Color.Silver;
 
-        public Color ActiveWindowColor { get; set; } = Color.FromArgb(255, Color.Silver);
-        public Color ActiveWindowBorderColor { get; set; } = Color.White;
+        public Color DesktopBorderColor { get; set; } = Color.FromArgb(32, 32, 32);
         public Color ActiveDesktopBorderColor { get; set; } = Color.LightBlue;
-
         public enum BorderStyle { Box, Underline };
-        public BorderStyle ActiveDesktopBorderStyle { get; set; } = BorderStyle.Box;
+        public BorderStyle DesktopBorderStyle { get; set; } = BorderStyle.Box;
+
+        public Color WindowColor { get; set; } = Color.FromArgb(255, Color.Gray);
+        public Color ActiveWindowColor { get; set; } = Color.FromArgb(255, Color.Silver);
+
+        public Color WindowBorderColor { get; set; } = Color.Silver;
+        public Color ActiveWindowBorderColor { get; set; } = Color.White;
 
         public enum RenderMode { Windows, Icons }
         public RenderMode WindowRenderMode { get; set; } = RenderMode.Windows;
@@ -491,8 +489,13 @@ namespace Switchie
             PagerHeight = settings.PagerHeight;
 
             BackgroundColor = settings.BackgroundColor;
-            DesktopColor = settings.DesktopColor;
+            DesktopBorderColor = settings.DesktopBorderColor;
             ActiveDesktopBorderColor = settings.ActiveDesktopBorderColor;
+            WindowColor = settings.WindowColor;
+            ActiveWindowColor = settings.ActiveWindowColor;
+            WindowBorderColor = settings.WindowBorderColor;
+            ActiveWindowBorderColor = settings.ActiveWindowBorderColor;
+            DesktopBorderStyle = settings.DesktopBorderStyle == 1 ? BorderStyle.Underline : BorderStyle.Box;
 
             primaryUpdateDelay = settings.PrimaryUpdateDelay;
             secondaryUpdateDelay = settings.SecondaryUpdateDelay;

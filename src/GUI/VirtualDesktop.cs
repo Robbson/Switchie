@@ -13,7 +13,7 @@ namespace Switchie
         public MainForm Form { get; set; }
         public Size Size { get; set; }
         public Point Location { get; set; }
-        
+
         public int VirtualDesktopIndex { get; set; }
         private readonly List<VirtualDesktopScreen> _screens = new List<VirtualDesktopScreen>();
         public bool IsCurrentActiveDesktop
@@ -23,10 +23,10 @@ namespace Switchie
 
         private DragDropData _dragDropData;
         private Rectangle dragBoxFromMouseDown;
-        
+
         private bool IsInsideBounds(Point p) => IsInsideBounds(p.X, p.Y);
 
-        private bool IsInsideBounds(int x, int y) 
+        private bool IsInsideBounds(int x, int y)
             => x >= Location.X && x < (Location.X + Size.Width) && y >= Location.Y && y < (Location.Y + Size.Height);
 
         public VirtualDesktop(int virtualDesktopIndex, MainForm form, Point location)
@@ -75,15 +75,25 @@ namespace Switchie
             _screens.ForEach(x => x.OnPaint(e));
 
             Graphics g = e.Graphics;
-            Color desktopBorderColor = IsCurrentActiveDesktop ? Form.ActiveDesktopBorderColor : Form.DesktopColor;
+            Color desktopBorderColor = IsCurrentActiveDesktop ? Form.ActiveDesktopBorderColor : Form.DesktopBorderColor;
 
-            // Just underline the active desktop
-            // -> TODO: Doesn't work if there is no window on the desktop
-
-            g.FillRectangle(
-                new SolidBrush(desktopBorderColor),
-                new Rectangle(Location.X, Size.Height-1, Size.Width, Size.Height)
-            );
+            if (Form.DesktopBorderStyle == MainForm.BorderStyle.Box)
+            {
+                // Draw a border around the active desktop
+                g.DrawRectangle(
+                    new Pen(new SolidBrush(desktopBorderColor), Form.BorderSize),
+                    new Rectangle(Location.X, Location.Y, Size.Width - (Form.BorderSize), Size.Height - (Form.BorderSize))
+                );
+            }
+            else
+            {
+                // Just underline the active desktop
+                // -> TODO: Doesn't work if there is no window on the desktop
+                g.FillRectangle(
+                    new SolidBrush(desktopBorderColor),
+                    new Rectangle(Location.X, Size.Height - 1, Size.Width, Size.Height)
+             );
+            }
         }
 
         public void OnMouseUp(object sender, MouseEventArgs e)
@@ -126,7 +136,8 @@ namespace Switchie
                         DraggedWindow = w
                     };
                     Size dragSize = SystemInformation.DragSize;
-                    dragBoxFromMouseDown = new Rectangle(new Point(e.X - (dragSize.Width / 2), e.Y - (dragSize.Height / 2)), dragSize);
+                    dragBoxFromMouseDown = new Rectangle(
+                        new Point(e.X - (dragSize.Width / 2), e.Y - (dragSize.Height / 2)), dragSize);
                 }
                 else
                     dragBoxFromMouseDown = Rectangle.Empty;
@@ -166,5 +177,4 @@ namespace Switchie
                 e.Effect = DragDropEffects.Move;
         }
     }
-
 }

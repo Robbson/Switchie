@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Switchie Settings"
         Width="460"
-        Height="520"
+        Height="620"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize">
     <Grid Margin="12">
@@ -13,7 +13,7 @@
         </Grid.RowDefinitions>
 
         <TabControl Grid.Row="0">
-            <TabItem Header="Appearance">
+            <TabItem Header="General">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="8">
                         <GroupBox Header="Rendering" Margin="0,0,0,10">
@@ -36,15 +36,25 @@
                                 <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center">Pager Height</TextBlock>
                                 <TextBox x:Name="txtPagerHeight" Grid.Row="1" Grid.Column="1" Margin="8,2,0,2" TextChanged="TextInputChanged" />
                                 <Button x:Name="btnRevertPagerHeight" Grid.Row="1" Grid.Column="2" Width="28" Height="24" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertPagerHeight_Click" />
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Center">Desktop Border Style</TextBlock>
+                                <ComboBox x:Name="cmbDesktopBorderStyle" Grid.Row="2" Grid.Column="1" Margin="8,2,0,2" SelectionChanged="RenderModeChanged" />
+                                <Button x:Name="btnRevertDesktopBorderStyle" Grid.Row="2" Grid.Column="2" Width="28" Height="24" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertDesktopBorderStyle_Click" />
                             </Grid>
                         </GroupBox>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
 
-                        <GroupBox Header="Colors" Margin="0,0,0,10">
+            <TabItem Header="Colors">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="8">
+                        <GroupBox Header="Virtual Desktops" Margin="0,0,0,10">
                             <Grid Margin="10">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="220" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="90" />
+                                    <ColumnDefinition Width="200" />
+                                    <ColumnDefinition Width="56" />
+                                    <ColumnDefinition Width="72" />
                                     <ColumnDefinition Width="36" />
                                 </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
@@ -53,27 +63,64 @@
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
 
-                                <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center">Background Color</TextBlock>
-                                <Border x:Name="previewBackgroundColor" Grid.Row="0" Grid.Column="1" Margin="8,2,8,2" Height="24" BorderThickness="1" BorderBrush="Gray" />
+                                <TextBlock Grid.Column="0" VerticalAlignment="Center" Height="16">Background</TextBlock>
+                                <Border x:Name="previewBackgroundColor" Grid.Row="0" Grid.Column="1" Margin="8,2,2,2" Width="32" HorizontalAlignment="Left" BorderThickness="1" BorderBrush="Gray" Grid.ColumnSpan="2" />
                                 <Button Grid.Row="0" Grid.Column="2" Margin="0,2,0,2" Content="Choose..." Click="ChooseBackgroundColor_Click" />
-                                <Button x:Name="btnRevertBackgroundColor" Grid.Row="0" Grid.Column="3" Width="28" Height="24" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertBackgroundColor_Click" />
+                                <Button x:Name="btnRevertBackgroundColor" Grid.Row="0" Grid.Column="3" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertBackgroundColor_Click" />
 
-                                <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center">Desktop Color</TextBlock>
-                                <Border x:Name="previewDesktopColor" Grid.Row="1" Grid.Column="1" Margin="8,2,8,2" Height="24" BorderThickness="1" BorderBrush="Gray" />
+                                <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Height="16">Desktop Border</TextBlock>
+                                <Border x:Name="previewDesktopColor" Grid.Row="1" Grid.Column="1" Margin="8,2,0,2" Width="32" HorizontalAlignment="Left" BorderThickness="1" BorderBrush="Gray" Grid.ColumnSpan="2" />
                                 <Button Grid.Row="1" Grid.Column="2" Margin="0,2,0,2" Content="Choose..." Click="ChooseDesktopColor_Click" />
-                                <Button x:Name="btnRevertDesktopColor" Grid.Row="1" Grid.Column="3" Width="28" Height="24" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertDesktopColor_Click" />
+                                <Button x:Name="btnRevertDesktopColor" Grid.Row="1" Grid.Column="3" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertDesktopColor_Click" />
 
-                                <TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Center">Active Desktop Border</TextBlock>
-                                <Border x:Name="previewActiveDesktopBorderColor" Grid.Row="2" Grid.Column="1" Margin="8,2,8,2" Height="24" BorderThickness="1" BorderBrush="Gray" />
+                                <TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" Height="16">Desktop Border (Active)</TextBlock>
+                                <Border x:Name="previewActiveDesktopBorderColor" Grid.Row="2" Grid.Column="1" Margin="8,2,0,2" Width="32" HorizontalAlignment="Left" BorderThickness="1" BorderBrush="Gray" Grid.ColumnSpan="2" />
                                 <Button Grid.Row="2" Grid.Column="2" Margin="0,2,0,2" Content="Choose..." Click="ChooseActiveDesktopBorderColor_Click" />
-                                <Button x:Name="btnRevertActiveDesktopBorderColor" Grid.Row="2" Grid.Column="3" Width="28" Height="24" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertActiveDesktopBorderColor_Click" />
+                                <Button x:Name="btnRevertActiveDesktopBorderColor" Grid.Row="2" Grid.Column="3" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertActiveDesktopBorderColor_Click" />
+                            </Grid>
+                        </GroupBox>
+
+                        <GroupBox Header="Window Previews" Margin="0,0,0,10">
+                            <Grid Margin="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="200" />
+                                    <ColumnDefinition Width="56" />
+                                    <ColumnDefinition Width="72" />
+                                    <ColumnDefinition Width="36" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Height="16">Window</TextBlock>
+                                <Border x:Name="previewWindowColor" Grid.Row="0" Grid.Column="1" Margin="8,2,0,2" Width="32" HorizontalAlignment="Left" BorderThickness="1" BorderBrush="Gray" Grid.ColumnSpan="2" />
+                                <Button Grid.Row="0" Grid.Column="2" Margin="0,2,0,2" Content="Choose..." Click="ChooseWindowColor_Click" />
+                                <Button x:Name="btnRevertWindowColor" Grid.Row="0" Grid.Column="3" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertWindowColor_Click" />
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Height="16">Window (Active)</TextBlock>
+                                <Border x:Name="previewActiveWindowColor" Grid.Row="1" Grid.Column="1" Margin="8,2,0,2" Width="32" HorizontalAlignment="Left" BorderThickness="1" BorderBrush="Gray" Grid.ColumnSpan="2" />
+                                <Button Grid.Row="1" Grid.Column="2" Margin="0,2,0,2" Content="Choose..." Click="ChooseActiveWindowColor_Click" />
+                                <Button x:Name="btnRevertActiveWindowColor" Grid.Row="1" Grid.Column="3" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertActiveWindowColor_Click" />
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" Height="16">Window Border</TextBlock>
+                                <Border x:Name="previewWindowBorderColor" Grid.Row="2" Grid.Column="1" Margin="8,2,0,2" Width="32" HorizontalAlignment="Left" BorderThickness="1" BorderBrush="Gray" Grid.ColumnSpan="2" />
+                                <Button Grid.Row="2" Grid.Column="2" Margin="0,2,0,2" Content="Choose..." Click="ChooseWindowBorderColor_Click" />
+                                <Button x:Name="btnRevertWindowBorderColor" Grid.Row="2" Grid.Column="3" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertWindowBorderColor_Click" />
+
+                                <TextBlock Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" Height="16">Window Border (Active)</TextBlock>
+                                <Border x:Name="previewActiveWindowBorderColor" Grid.Row="3" Grid.Column="1" Margin="8,2,0,2" Width="32" HorizontalAlignment="Left" BorderThickness="1" BorderBrush="Gray" Grid.ColumnSpan="2" />
+                                <Button Grid.Row="3" Grid.Column="2" Margin="0,2,0,2" Content="Choose..." Click="ChooseActiveWindowBorderColor_Click" />
+                                <Button x:Name="btnRevertActiveWindowBorderColor" Grid.Row="3" Grid.Column="3" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertActiveWindowBorderColor_Click" />
                             </Grid>
                         </GroupBox>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="Advanced">
+            <TabItem Header="Performance">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="8">
                         <GroupBox Header="Performance" Margin="0,0,0,10">

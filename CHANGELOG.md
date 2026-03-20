@@ -1,5 +1,17 @@
 # Switchie Changelog
 
+## v1.3.0
+
+New features:
+- new settings dialog
+
+Changes:
+- nicer about dialog
+
+Others:
+- removed not used properties and functions
+
+
 ## v1.2.0
 
 Bug fixes:

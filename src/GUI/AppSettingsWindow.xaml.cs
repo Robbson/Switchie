@@ -11,8 +11,12 @@ namespace Switchie
     {
         private readonly AppSettings _defaults = new AppSettings();
         private DrawingColor _backgroundColor;
-        private DrawingColor _desktopColor;
+        private DrawingColor _desktopBorderColor;
         private DrawingColor _activeDesktopBorderColor;
+        private DrawingColor _windowColor;
+        private DrawingColor _activeWindowColor;
+        private DrawingColor _windowBorderColor;
+        private DrawingColor _activeWindowBorderColor;
 
         public AppSettings Settings { get; private set; }
 
@@ -25,14 +29,24 @@ namespace Switchie
             cmbRenderMode.Items.Add("Windows");
             cmbRenderMode.Items.Add("Icons");
 
+            cmbDesktopBorderStyle.Items.Add("Box");
+            cmbDesktopBorderStyle.Items.Add("Underline");
+
             cmbRenderMode.SelectedIndex = Math.Max(0, Math.Min(1, Settings.RenderMode));
+            cmbDesktopBorderStyle.SelectedIndex = Math.Max(0, Math.Min(1, Settings.DesktopBorderStyle));
             txtPagerHeight.Text = Settings.PagerHeight.ToString(CultureInfo.InvariantCulture);
+            
+            _backgroundColor = Settings.BackgroundColor;
+
+            _desktopBorderColor = Settings.DesktopBorderColor;
+            _activeDesktopBorderColor = Settings.ActiveDesktopBorderColor;
+            _windowColor = Settings.WindowColor;
+            _activeWindowColor = Settings.ActiveWindowColor;
+            _windowBorderColor = Settings.WindowBorderColor;
+            _activeWindowBorderColor = Settings.ActiveWindowBorderColor;
+
             txtPrimaryDelay.Text = Settings.PrimaryUpdateDelay.ToString(CultureInfo.InvariantCulture);
             txtSecondaryDelay.Text = Settings.SecondaryUpdateDelay.ToString(CultureInfo.InvariantCulture);
-
-            _backgroundColor = Settings.BackgroundColor;
-            _desktopColor = Settings.DesktopColor;
-            _activeDesktopBorderColor = Settings.ActiveDesktopBorderColor;
 
             RefreshColorPreviews();
             UpdateRevertButtons();
@@ -47,7 +61,7 @@ namespace Switchie
 
         private void ChooseDesktopColor_Click(object sender, RoutedEventArgs e)
         {
-            _desktopColor = PickColor(_desktopColor);
+            _desktopBorderColor = PickColor(_desktopBorderColor);
             RefreshColorPreviews();
             UpdateRevertButtons();
         }
@@ -55,6 +69,34 @@ namespace Switchie
         private void ChooseActiveDesktopBorderColor_Click(object sender, RoutedEventArgs e)
         {
             _activeDesktopBorderColor = PickColor(_activeDesktopBorderColor);
+            RefreshColorPreviews();
+            UpdateRevertButtons();
+        }
+
+        private void ChooseWindowColor_Click(object sender, RoutedEventArgs e)
+        {
+            _windowColor = PickColor(_windowColor);
+            RefreshColorPreviews();
+            UpdateRevertButtons();
+        }
+
+        private void ChooseActiveWindowColor_Click(object sender, RoutedEventArgs e)
+        {
+            _activeWindowColor = PickColor(_activeWindowColor);
+            RefreshColorPreviews();
+            UpdateRevertButtons();
+        }
+
+        private void ChooseWindowBorderColor_Click(object sender, RoutedEventArgs e)
+        {
+            _windowBorderColor = PickColor(_windowBorderColor);
+            RefreshColorPreviews();
+            UpdateRevertButtons();
+        }
+
+        private void ChooseActiveWindowBorderColor_Click(object sender, RoutedEventArgs e)
+        {
+            _activeWindowBorderColor = PickColor(_activeWindowBorderColor);
             RefreshColorPreviews();
             UpdateRevertButtons();
         }
@@ -72,13 +114,20 @@ namespace Switchie
         private void RevertAll_Click(object sender, RoutedEventArgs e)
         {
             cmbRenderMode.SelectedIndex = _defaults.RenderMode <= 0 ? 0 : 1;
+            cmbDesktopBorderStyle.SelectedIndex = _defaults.DesktopBorderStyle <= 0 ? 0 : 1;
             txtPagerHeight.Text = _defaults.PagerHeight.ToString(CultureInfo.InvariantCulture);
-            txtPrimaryDelay.Text = _defaults.PrimaryUpdateDelay.ToString(CultureInfo.InvariantCulture);
-            txtSecondaryDelay.Text = _defaults.SecondaryUpdateDelay.ToString(CultureInfo.InvariantCulture);
 
             _backgroundColor = _defaults.BackgroundColor;
-            _desktopColor = _defaults.DesktopColor;
+
+            _desktopBorderColor = _defaults.DesktopBorderColor;
             _activeDesktopBorderColor = _defaults.ActiveDesktopBorderColor;
+            _windowColor = _defaults.WindowColor;
+            _activeWindowColor = _defaults.ActiveWindowColor;
+            _windowBorderColor = _defaults.WindowBorderColor;
+            _activeWindowBorderColor = _defaults.ActiveWindowBorderColor;
+
+            txtPrimaryDelay.Text = _defaults.PrimaryUpdateDelay.ToString(CultureInfo.InvariantCulture);
+            txtSecondaryDelay.Text = _defaults.SecondaryUpdateDelay.ToString(CultureInfo.InvariantCulture);
 
             RefreshColorPreviews();
             UpdateRevertButtons();
@@ -96,15 +145,9 @@ namespace Switchie
             UpdateRevertButtons();
         }
 
-        private void RevertPrimaryDelay_Click(object sender, RoutedEventArgs e)
+        private void RevertDesktopBorderStyle_Click(object sender, RoutedEventArgs e)
         {
-            txtPrimaryDelay.Text = _defaults.PrimaryUpdateDelay.ToString(CultureInfo.InvariantCulture);
-            UpdateRevertButtons();
-        }
-
-        private void RevertSecondaryDelay_Click(object sender, RoutedEventArgs e)
-        {
-            txtSecondaryDelay.Text = _defaults.SecondaryUpdateDelay.ToString(CultureInfo.InvariantCulture);
+            cmbDesktopBorderStyle.SelectedIndex = _defaults.DesktopBorderStyle <= 0 ? 0 : 1;
             UpdateRevertButtons();
         }
 
@@ -117,7 +160,7 @@ namespace Switchie
 
         private void RevertDesktopColor_Click(object sender, RoutedEventArgs e)
         {
-            _desktopColor = _defaults.DesktopColor;
+            _desktopBorderColor = _defaults.DesktopBorderColor;
             RefreshColorPreviews();
             UpdateRevertButtons();
         }
@@ -126,6 +169,46 @@ namespace Switchie
         {
             _activeDesktopBorderColor = _defaults.ActiveDesktopBorderColor;
             RefreshColorPreviews();
+            UpdateRevertButtons();
+        }
+
+        private void RevertWindowColor_Click(object sender, RoutedEventArgs e)
+        {
+            _windowColor = _defaults.WindowColor;
+            RefreshColorPreviews();
+            UpdateRevertButtons();
+        }
+
+        private void RevertActiveWindowColor_Click(object sender, RoutedEventArgs e)
+        {
+            _activeWindowColor = _defaults.ActiveWindowColor;
+            RefreshColorPreviews();
+            UpdateRevertButtons();
+        }
+
+        private void RevertWindowBorderColor_Click(object sender, RoutedEventArgs e)
+        {
+            _windowBorderColor = _defaults.WindowBorderColor;
+            RefreshColorPreviews();
+            UpdateRevertButtons();
+        }
+
+        private void RevertActiveWindowBorderColor_Click(object sender, RoutedEventArgs e)
+        {
+            _activeWindowBorderColor = _defaults.ActiveWindowBorderColor;
+            RefreshColorPreviews();
+            UpdateRevertButtons();
+        }
+
+        private void RevertPrimaryDelay_Click(object sender, RoutedEventArgs e)
+        {
+            txtPrimaryDelay.Text = _defaults.PrimaryUpdateDelay.ToString(CultureInfo.InvariantCulture);
+            UpdateRevertButtons();
+        }
+
+        private void RevertSecondaryDelay_Click(object sender, RoutedEventArgs e)
+        {
+            txtSecondaryDelay.Text = _defaults.SecondaryUpdateDelay.ToString(CultureInfo.InvariantCulture);
             UpdateRevertButtons();
         }
 
@@ -143,21 +226,26 @@ namespace Switchie
                 return;
             }
 
-            if (!TryParsePositiveInt(txtSecondaryDelay.Text, 10, out int secondaryDelay))
+            if (!TryParsePositiveInt(txtSecondaryDelay.Text, 100, out int secondaryDelay))
             {
-                ShowValidationError("Secondary Update Delay must be at least 10 ms.");
+                ShowValidationError("Secondary Update Delay must be at least 100 ms.");
                 return;
             }
 
             Settings = new AppSettings
             {
                 RenderMode = cmbRenderMode.SelectedIndex <= 0 ? 0 : 1,
+                DesktopBorderStyle = cmbDesktopBorderStyle.SelectedIndex <= 0 ? 0 : 1,
                 PagerHeight = pagerHeight,
                 PrimaryUpdateDelay = primaryDelay,
                 SecondaryUpdateDelay = secondaryDelay,
                 BackgroundColor = _backgroundColor,
-                DesktopColor = _desktopColor,
-                ActiveDesktopBorderColor = _activeDesktopBorderColor
+                DesktopBorderColor = _desktopBorderColor,
+                ActiveDesktopBorderColor = _activeDesktopBorderColor,
+                WindowColor = _windowColor,
+                ActiveWindowColor = _activeWindowColor,
+                WindowBorderColor = _windowBorderColor,
+                ActiveWindowBorderColor = _activeWindowBorderColor
             };
 
             DialogResult = true;
@@ -174,12 +262,17 @@ namespace Switchie
             return new AppSettings
             {
                 RenderMode = source.RenderMode,
+                DesktopBorderStyle = source.DesktopBorderStyle,
                 PagerHeight = source.PagerHeight,
                 PrimaryUpdateDelay = source.PrimaryUpdateDelay,
                 SecondaryUpdateDelay = source.SecondaryUpdateDelay,
-                DesktopColor = source.DesktopColor,
+                DesktopBorderColor = source.DesktopBorderColor,
                 BackgroundColor = source.BackgroundColor,
-                ActiveDesktopBorderColor = source.ActiveDesktopBorderColor
+                ActiveDesktopBorderColor = source.ActiveDesktopBorderColor,
+                WindowColor = source.WindowColor,
+                ActiveWindowColor = source.ActiveWindowColor,
+                WindowBorderColor = source.WindowBorderColor,
+                ActiveWindowBorderColor = source.ActiveWindowBorderColor
             };
         }
 
@@ -196,8 +289,12 @@ namespace Switchie
         private void RefreshColorPreviews()
         {
             previewBackgroundColor.Background = ToBrush(_backgroundColor);
-            previewDesktopColor.Background = ToBrush(_desktopColor);
+            previewDesktopColor.Background = ToBrush(_desktopBorderColor);
             previewActiveDesktopBorderColor.Background = ToBrush(_activeDesktopBorderColor);
+            previewWindowColor.Background = ToBrush(_windowColor);
+            previewActiveWindowColor.Background = ToBrush(_activeWindowColor);
+            previewWindowBorderColor.Background = ToBrush(_windowBorderColor);
+            previewActiveWindowBorderColor.Background = ToBrush(_activeWindowBorderColor);
         }
 
         private static System.Windows.Media.SolidColorBrush ToBrush(DrawingColor color)
@@ -208,13 +305,18 @@ namespace Switchie
         private void UpdateRevertButtons()
         {
             btnRevertRenderMode.Visibility = IsDifferent(cmbRenderMode.SelectedIndex, _defaults.RenderMode) ? Visibility.Visible : Visibility.Hidden;
+            btnRevertDesktopBorderStyle.Visibility = IsDifferent(cmbDesktopBorderStyle.SelectedIndex, _defaults.DesktopBorderStyle) ? Visibility.Visible : Visibility.Hidden;
             btnRevertPagerHeight.Visibility = IsDifferent(txtPagerHeight.Text, _defaults.PagerHeight) ? Visibility.Visible : Visibility.Hidden;
             btnRevertPrimaryDelay.Visibility = IsDifferent(txtPrimaryDelay.Text, _defaults.PrimaryUpdateDelay) ? Visibility.Visible : Visibility.Hidden;
             btnRevertSecondaryDelay.Visibility = IsDifferent(txtSecondaryDelay.Text, _defaults.SecondaryUpdateDelay) ? Visibility.Visible : Visibility.Hidden;
 
             btnRevertBackgroundColor.Visibility = _backgroundColor.ToArgb() != _defaults.BackgroundColor.ToArgb() ? Visibility.Visible : Visibility.Hidden;
-            btnRevertDesktopColor.Visibility = _desktopColor.ToArgb() != _defaults.DesktopColor.ToArgb() ? Visibility.Visible : Visibility.Hidden;
+            btnRevertDesktopColor.Visibility = _desktopBorderColor.ToArgb() != _defaults.DesktopBorderColor.ToArgb() ? Visibility.Visible : Visibility.Hidden;
             btnRevertActiveDesktopBorderColor.Visibility = _activeDesktopBorderColor.ToArgb() != _defaults.ActiveDesktopBorderColor.ToArgb() ? Visibility.Visible : Visibility.Hidden;
+            btnRevertWindowColor.Visibility = _windowColor.ToArgb() != _defaults.WindowColor.ToArgb() ? Visibility.Visible : Visibility.Hidden;
+            btnRevertActiveWindowColor.Visibility = _activeWindowColor.ToArgb() != _defaults.ActiveWindowColor.ToArgb() ? Visibility.Visible : Visibility.Hidden;
+            btnRevertWindowBorderColor.Visibility = _windowBorderColor.ToArgb() != _defaults.WindowBorderColor.ToArgb() ? Visibility.Visible : Visibility.Hidden;
+            btnRevertActiveWindowBorderColor.Visibility = _activeWindowBorderColor.ToArgb() != _defaults.ActiveWindowBorderColor.ToArgb() ? Visibility.Visible : Visibility.Hidden;
         }
 
         private static bool IsDifferent(string input, int defaultValue)
