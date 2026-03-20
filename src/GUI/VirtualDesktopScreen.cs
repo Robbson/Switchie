@@ -36,8 +36,17 @@ namespace Switchie
             {
                 var windowsEnumerated = Form.Windows.Where(x => x.VirtualDesktopIndex == VirtualDesktop.VirtualDesktopIndex);
 
-                // Order by process is similar to order is taskbar, as long as the user doesn't move them
-                windows = windowsEnumerated.OrderBy(x => x.ProcessID).ToArray();
+                // Order by process is similar to order in taskbar, as long as the user doesn't move them.
+                // For windows with the same process, keep a deterministic order by z-order.
+                windows = windowsEnumerated
+                    .OrderBy(x => x.ProcessID)
+                    .ThenBy(x => x.ZOrder)
+                    .ToArray();
+
+                /*foreach (var item in windows)
+                {
+                    Debug.WriteLine(item.ProcessID + ": " + item.Handle + " z" + item.ZOrder);
+                }*/
             }
             if (windows.Length == 0) return;
 

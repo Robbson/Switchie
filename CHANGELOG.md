@@ -1,6 +1,15 @@
 # Switchie Changelog
 
 
+## v1.4.0
+
+Bug fixes:
+- Get it run on recent Windows 11 version again
+
+Changes:
+- Instance creation has now several fallbacks so it should work on several Win 10 and Win 11 versions 
+
+
 ## v1.3.3
 
 Changes:
