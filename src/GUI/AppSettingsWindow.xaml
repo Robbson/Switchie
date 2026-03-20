@@ -1,0 +1,112 @@
+<Window x:Class="Switchie.AppSettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Switchie Settings"
+        Width="460"
+        Height="520"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TabControl Grid.Row="0">
+            <TabItem Header="Appearance">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="8">
+                        <GroupBox Header="Rendering" Margin="0,0,0,10">
+                            <Grid Margin="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="220" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="36" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center">Render Mode</TextBlock>
+                                <ComboBox x:Name="cmbRenderMode" Grid.Row="0" Grid.Column="1" Margin="8,2,0,2" SelectionChanged="RenderModeChanged" />
+                                <Button x:Name="btnRevertRenderMode" Grid.Row="0" Grid.Column="2" Width="28" Height="24" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertRenderMode_Click" />
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center">Pager Height</TextBlock>
+                                <TextBox x:Name="txtPagerHeight" Grid.Row="1" Grid.Column="1" Margin="8,2,0,2" TextChanged="TextInputChanged" />
+                                <Button x:Name="btnRevertPagerHeight" Grid.Row="1" Grid.Column="2" Width="28" Height="24" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertPagerHeight_Click" />
+                            </Grid>
+                        </GroupBox>
+
+                        <GroupBox Header="Colors" Margin="0,0,0,10">
+                            <Grid Margin="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="220" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="90" />
+                                    <ColumnDefinition Width="36" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center">Background Color</TextBlock>
+                                <Border x:Name="previewBackgroundColor" Grid.Row="0" Grid.Column="1" Margin="8,2,8,2" Height="24" BorderThickness="1" BorderBrush="Gray" />
+                                <Button Grid.Row="0" Grid.Column="2" Margin="0,2,0,2" Content="Choose..." Click="ChooseBackgroundColor_Click" />
+                                <Button x:Name="btnRevertBackgroundColor" Grid.Row="0" Grid.Column="3" Width="28" Height="24" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertBackgroundColor_Click" />
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center">Desktop Color</TextBlock>
+                                <Border x:Name="previewDesktopColor" Grid.Row="1" Grid.Column="1" Margin="8,2,8,2" Height="24" BorderThickness="1" BorderBrush="Gray" />
+                                <Button Grid.Row="1" Grid.Column="2" Margin="0,2,0,2" Content="Choose..." Click="ChooseDesktopColor_Click" />
+                                <Button x:Name="btnRevertDesktopColor" Grid.Row="1" Grid.Column="3" Width="28" Height="24" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertDesktopColor_Click" />
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Center">Active Desktop Border</TextBlock>
+                                <Border x:Name="previewActiveDesktopBorderColor" Grid.Row="2" Grid.Column="1" Margin="8,2,8,2" Height="24" BorderThickness="1" BorderBrush="Gray" />
+                                <Button Grid.Row="2" Grid.Column="2" Margin="0,2,0,2" Content="Choose..." Click="ChooseActiveDesktopBorderColor_Click" />
+                                <Button x:Name="btnRevertActiveDesktopBorderColor" Grid.Row="2" Grid.Column="3" Width="28" Height="24" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertActiveDesktopBorderColor_Click" />
+                            </Grid>
+                        </GroupBox>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Advanced">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="8">
+                        <GroupBox Header="Performance" Margin="0,0,0,10">
+                            <Grid Margin="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="220" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="36" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center">Primary Update Delay (ms)</TextBlock>
+                                <TextBox x:Name="txtPrimaryDelay" Grid.Row="0" Grid.Column="1" Margin="8,2,0,2" TextChanged="TextInputChanged" />
+                                <Button x:Name="btnRevertPrimaryDelay" Grid.Row="0" Grid.Column="2" Width="28" Height="24" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertPrimaryDelay_Click" />
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center">Secondary Update Delay (ms)</TextBlock>
+                                <TextBox x:Name="txtSecondaryDelay" Grid.Row="1" Grid.Column="1" Margin="8,2,0,2" TextChanged="TextInputChanged" />
+                                <Button x:Name="btnRevertSecondaryDelay" Grid.Row="1" Grid.Column="2" Width="28" Height="24" Margin="8,2,0,2" Content="↺" ToolTip="Revert to default" Click="RevertSecondaryDelay_Click" />
+                            </Grid>
+                        </GroupBox>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Width="100" Margin="0,0,8,0" Content="Defaults" Click="RevertAll_Click" />
+            <Button Width="100" Margin="0,0,8,0" IsDefault="True" Content="Save" Click="Save_Click" />
+            <Button Width="100" IsCancel="True" Content="Cancel" />
+        </StackPanel>
+    </Grid>
+</Window>
+

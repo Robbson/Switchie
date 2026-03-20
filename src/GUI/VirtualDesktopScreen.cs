@@ -28,7 +28,7 @@ namespace Switchie
             windows = Form.Windows.Where(x => x.VirtualDesktopIndex == VirtualDesktop.VirtualDesktopIndex).OrderBy(x => x.ZOrder).ToArray();
 
             /*
-            if (Form.WindowRenderMode == MainForm.RenderMode.Thumbnails)
+            if (Form.WindowRenderMode == MainForm.RenderMode.Windows)
             {
                 
             }

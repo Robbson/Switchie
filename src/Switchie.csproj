@@ -4,6 +4,7 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net4.8</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
+    <UseWPF>true</UseWPF>
     <PlatformTarget>x64</PlatformTarget>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <ApplicationIcon>Resources/icon.ico</ApplicationIcon>
@@ -12,10 +13,12 @@
 
   <ItemGroup>
     <Content Remove="Resources/icon.ico" />
+    <Content Remove="Resources/icon.png" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Resources/icon.ico" />
+    <EmbeddedResource Include="Resources/icon.png" />
   </ItemGroup>
 
 </Project>

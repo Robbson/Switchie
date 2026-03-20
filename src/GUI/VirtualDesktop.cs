@@ -7,17 +7,15 @@ using System.Windows.Forms;
 
 namespace Switchie
 {
-    // Represents a Virtual Desktop Thumbnail in the Pager
+    // Represents a virtual desktop mini view in the pager
     public class VirtualDesktop
     {
         public MainForm Form { get; set; }
-
         public Size Size { get; set; }
-
         public Point Location { get; set; }
-
+        
         public int VirtualDesktopIndex { get; set; }
-
+        private readonly List<VirtualDesktopScreen> _screens = new List<VirtualDesktopScreen>();
         public bool IsCurrentActiveDesktop
         {
             get => WindowsVirtualDesktopManager.GetInstance().FromDesktop(WindowsVirtualDesktop.GetInstance().Current) == VirtualDesktopIndex;
@@ -25,12 +23,11 @@ namespace Switchie
 
         private DragDropData _dragDropData;
         private Rectangle dragBoxFromMouseDown;
-        private List<VirtualDesktopScreen> _screens = new List<VirtualDesktopScreen>();
-
+        
         private bool IsInsideBounds(Point p) => IsInsideBounds(p.X, p.Y);
 
-        private bool IsInsideBounds(int x, int y) =>
-            x >= Location.X && x < (Location.X + Size.Width) && y >= Location.Y && y < (Location.Y + Size.Height);
+        private bool IsInsideBounds(int x, int y) 
+            => x >= Location.X && x < (Location.X + Size.Width) && y >= Location.Y && y < (Location.Y + Size.Height);
 
         public VirtualDesktop(int virtualDesktopIndex, MainForm form, Point location)
         {
@@ -55,7 +52,8 @@ namespace Switchie
 
         private Window GetWindowUnderCursor(Point mousePosition)
         {
-            if (Form.WindowRenderMode == MainForm.RenderMode.Thumbnails)
+            // TODO: Support the other render mode
+            if (Form.WindowRenderMode == MainForm.RenderMode.Windows)
             {
                 var coord = Form.PointToClient(mousePosition);
                 var windows = Form.Windows.Where(x => x.VirtualDesktopIndex == VirtualDesktopIndex).OrderByDescending(x => x.ZOrder);
