@@ -1,6 +1,12 @@
 # Switchie Changelog
 
 
+## v1.4.3
+
+Changes:
+- Changed version management to have the application manifest as source so also the executable is correctly versioned
+
+
 ## v1.4.2
 
 New features:

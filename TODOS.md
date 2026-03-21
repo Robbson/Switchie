@@ -8,4 +8,4 @@
 
 ## Improvements
 
-- there should be a way to make the application temporarily transparent (e.g. when hovered)
+- there could be an option to make the application automatically half transparent when it covers another window

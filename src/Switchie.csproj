@@ -5,6 +5,11 @@
     <TargetFramework>net4.8</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <UseWPF>true</UseWPF>
+    <Version>1.4.3</Version>
+    <BuildNumber Condition="'$(BuildNumber)' == ''">$([System.DateTime]::UtcNow.ToString("yyDDD"))</BuildNumber>
+    <AssemblyVersion>$(Version).0</AssemblyVersion>
+    <FileVersion>$(Version).$(BuildNumber)</FileVersion>
+    <InformationalVersion>$(Version)+b$(BuildNumber)</InformationalVersion>
     <PlatformTarget>x64</PlatformTarget>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <ApplicationIcon>Resources/icon.ico</ApplicationIcon>

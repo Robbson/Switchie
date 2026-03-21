@@ -15,7 +15,9 @@ namespace Switchie
     // Pager main application form
     public class MainForm : Form
     {
-        private string version = "1.4.2";
+        private readonly string version =
+            typeof(MainForm).Assembly.GetName().Version?.ToString(3)
+            ?? Application.ProductVersion;
 
         // --- Internal Application State ---
         private bool _isAppPinned = false;
