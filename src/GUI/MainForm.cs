@@ -15,7 +15,7 @@ namespace Switchie
     // Pager main application form
     public class MainForm : Form
     {
-        private string version = "1.4.0";
+        private string version = "1.4.2";
 
         // --- Internal Application State ---
         private bool _isAppPinned = false;
@@ -36,6 +36,8 @@ namespace Switchie
 
         // --- Application Settings: Configurable by user ---
         private AppSettings _appSettings;
+
+        public double BackgroundOpacity { get; set; } = 1.0;
 
         public Color BackgroundColor { get; set; } = Color.FromArgb(64, 64, 64);
 
@@ -87,6 +89,8 @@ namespace Switchie
             ApplySettings(_appSettings, false);
 
             BackColor = BackgroundColor;
+            Opacity = BackgroundOpacity;
+
             FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             Icon = new System.Drawing.Icon(
                 new MemoryStream(Helpers.GetResourceFromAssembly(typeof(Program), "Switchie.Resources.icon.ico")));
@@ -497,6 +501,7 @@ namespace Switchie
             PaddingSize = settings.PaddingSize;
             IconPaddingX = settings.IconPaddingX;
             IconPaddingY = settings.IconPaddingY;
+            BackgroundOpacity = Math.Max(0.25, Math.Min(1.0, settings.BackgroundOpacity));
 
             BackgroundColor = settings.BackgroundColor;
             DesktopBorderColor = settings.DesktopBorderColor;
@@ -509,10 +514,13 @@ namespace Switchie
 
             PrimaryUpdateDelay = settings.PrimaryUpdateDelay;
             SecondaryUpdateDelay = settings.SecondaryUpdateDelay;
+            ShowAppInTaskbar = settings.ShowAppInTaskbar;
+            ShowInTaskbar = ShowAppInTaskbar;
 
             WindowRenderMode = settings.RenderMode == 1 ? RenderMode.Icons : RenderMode.Windows;
 
             BackColor = BackgroundColor;
+            Opacity = BackgroundOpacity;
 
             if (persist)
             {

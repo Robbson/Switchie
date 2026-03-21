@@ -6,6 +6,7 @@ namespace Switchie
     {
         public int RenderMode { get; set; } = 0;
         public int DesktopBorderStyle { get; set; } = 0;
+        public double BackgroundOpacity { get; set; } = 1.0;
         public int PagerHeight { get; set; } = 40;
         public int PaddingSize { get; set; } = 1;
         public int IconPaddingX { get; set; } = 0;
@@ -23,6 +24,7 @@ namespace Switchie
 
         public int PrimaryUpdateDelay { get; set; } = 200;
         public int SecondaryUpdateDelay { get; set; } = 500;
+        public bool ShowAppInTaskbar { get; set; } = true;
     }
 }
 

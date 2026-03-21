@@ -53,14 +53,16 @@ namespace Switchie
         private Window GetWindowUnderCursor(Point mousePosition)
         {
             var coord = Form.PointToClient(mousePosition);
+            var visibleWindows = Form.Windows
+                .Where(x => x.VirtualDesktopIndex == VirtualDesktopIndex && !WinAPI.IsIconic(x.Handle));
 
             // For windows render mode, we search across all screens for the clicked window in z-order from front to back,
-            // otherwise order should stay the same (using process id)
-            // -> TODO: this doesn't work reliably for the Icons mode when there are more windows of the same application
-            //    because they all share the same process id
-            var windows = Form.WindowRenderMode == MainForm.RenderMode.Windows 
-                ? Form.Windows.Where(x => x.VirtualDesktopIndex == VirtualDesktopIndex).OrderByDescending(x => x.ZOrder)
-                : Form.Windows.Where(w => w.VirtualDesktopIndex == VirtualDesktopIndex).OrderBy(w => w.ProcessID);
+            // otherwise order should stay the same (using process id & handle)
+            var windows = Form.WindowRenderMode == MainForm.RenderMode.Windows
+                ? visibleWindows.OrderByDescending(x => x.ZOrder)
+                : visibleWindows
+                    .OrderBy(x => x.ProcessID)
+                    .ThenBy(x => x.Handle.ToInt64());
 
             foreach (var w in windows)
             {

@@ -91,7 +91,10 @@ namespace Switchie
         
         [DllImport("user32.dll")]
         public static extern bool IsWindowVisible(IntPtr hWnd);
-        
+
+        [DllImport("user32.dll")]
+        public static extern bool IsIconic(IntPtr hWnd);
+
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern IntPtr GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
         

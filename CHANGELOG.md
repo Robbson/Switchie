@@ -1,6 +1,17 @@
 # Switchie Changelog
 
 
+## v1.4.2
+
+New features:
+- Setting to hide application window from Taskbar
+- Setting to change opacity of the application
+
+Bug fixes
+- Filter minimized windows from list, especially important for the icons render mode
+- Clicking on windows in Icons render mode now works reliably when an application has more than one window
+
+
 ## v1.4.0
 
 Bug fixes:

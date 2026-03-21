@@ -1,6 +1,7 @@
 using Microsoft.Win32;
 using System;
 using System.Drawing;
+using System.Globalization;
 
 namespace Switchie
 {
@@ -17,6 +18,7 @@ namespace Switchie
                 {
                     RenderMode = ReadInt(key, "RenderMode", defaults.RenderMode),
                     DesktopBorderStyle = ReadInt(key, "DesktopBorderStyle", defaults.DesktopBorderStyle),
+                    BackgroundOpacity = ReadDouble(key, "BackgroundOpacity", defaults.BackgroundOpacity),
                     PagerHeight = ReadInt(key, "PagerHeight", defaults.PagerHeight),
                     PaddingSize = ReadInt(key, "PaddingSize", defaults.PaddingSize),
                     IconPaddingX = ReadInt(key, "IconPaddingX", defaults.IconPaddingX),
@@ -33,7 +35,8 @@ namespace Switchie
                     ActiveWindowBorderColor = ReadColor(key, "ActiveWindowBorderColor", defaults.ActiveWindowBorderColor),
 
                     PrimaryUpdateDelay = ReadInt(key, "PrimaryUpdateDelay", defaults.PrimaryUpdateDelay),
-                    SecondaryUpdateDelay = ReadInt(key, "SecondaryUpdateDelay", defaults.SecondaryUpdateDelay)
+                    SecondaryUpdateDelay = ReadInt(key, "SecondaryUpdateDelay", defaults.SecondaryUpdateDelay),
+                    ShowAppInTaskbar = ReadInt(key, "ShowAppInTaskbar", defaults.ShowAppInTaskbar ? 1 : 0) == 1
                 };
             }
         }
@@ -45,6 +48,7 @@ namespace Switchie
                 if (key == null) return;
                 key.SetValue("RenderMode", settings.RenderMode, RegistryValueKind.DWord);
                 key.SetValue("DesktopBorderStyle", settings.DesktopBorderStyle, RegistryValueKind.DWord);
+                key.SetValue("BackgroundOpacity", settings.BackgroundOpacity.ToString(CultureInfo.InvariantCulture), RegistryValueKind.String);
                 key.SetValue("PagerHeight", settings.PagerHeight, RegistryValueKind.DWord);
                 key.SetValue("PaddingSize", settings.PaddingSize, RegistryValueKind.DWord);
                 key.SetValue("IconPaddingX", settings.IconPaddingX, RegistryValueKind.DWord);
@@ -62,6 +66,7 @@ namespace Switchie
 
                 key.SetValue("PrimaryUpdateDelay", settings.PrimaryUpdateDelay, RegistryValueKind.DWord);
                 key.SetValue("SecondaryUpdateDelay", settings.SecondaryUpdateDelay, RegistryValueKind.DWord);
+                key.SetValue("ShowAppInTaskbar", settings.ShowAppInTaskbar ? 1 : 0, RegistryValueKind.DWord);
             }
         }
 
@@ -75,6 +80,16 @@ namespace Switchie
         {
             object value = key.GetValue(valueName);
             return value == null ? fallback : int.TryParse(value.ToString(), out int argb) ? Color.FromArgb(argb) : fallback;
+        }
+
+        private static double ReadDouble(RegistryKey key, string valueName, double fallback)
+        {
+            object value = key.GetValue(valueName);
+            return value == null
+                ? fallback
+                : double.TryParse(value.ToString(), NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out double result)
+                    ? result
+                    : fallback;
         }
     }
 }

@@ -34,10 +34,19 @@ namespace Switchie
 
             cmbRenderMode.SelectedIndex = Math.Max(0, Math.Min(1, Settings.RenderMode));
             cmbDesktopBorderStyle.SelectedIndex = Math.Max(0, Math.Min(1, Settings.DesktopBorderStyle));
+            if (sldBackgroundOpacity != null)
+            {
+                sldBackgroundOpacity.Value = Math.Max(0.25, Math.Min(1.0, Settings.BackgroundOpacity));
+            }
+            if (txtBackgroundOpacityValue != null && sldBackgroundOpacity != null)
+            {
+                txtBackgroundOpacityValue.Text = sldBackgroundOpacity.Value.ToString("0.00", CultureInfo.InvariantCulture);
+            }
             txtPagerHeight.Text = Settings.PagerHeight.ToString(CultureInfo.InvariantCulture);
             txtPaddingSize.Text = Settings.PaddingSize.ToString(CultureInfo.InvariantCulture);
             txtIconPaddingX.Text = Settings.IconPaddingX.ToString(CultureInfo.InvariantCulture);
             txtIconPaddingY.Text = Settings.IconPaddingY.ToString(CultureInfo.InvariantCulture);
+            chkShowAppInTaskbar.IsChecked = Settings.ShowAppInTaskbar;
             
             _backgroundColor = Settings.BackgroundColor;
 
@@ -114,14 +123,39 @@ namespace Switchie
             UpdateRevertButtons();
         }
 
+        private void BooleanInputChanged(object sender, RoutedEventArgs e)
+        {
+            UpdateRevertButtons();
+        }
+
+        private void BackgroundOpacityChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (txtBackgroundOpacityValue != null)
+            {
+                txtBackgroundOpacityValue.Text = sldBackgroundOpacity.Value.ToString("0.00", CultureInfo.InvariantCulture);
+            }
+
+            if (!IsLoaded)
+            {
+                return;
+            }
+
+            UpdateRevertButtons();
+        }
+
         private void RevertAll_Click(object sender, RoutedEventArgs e)
         {
             cmbRenderMode.SelectedIndex = _defaults.RenderMode <= 0 ? 0 : 1;
             cmbDesktopBorderStyle.SelectedIndex = _defaults.DesktopBorderStyle <= 0 ? 0 : 1;
+            if (sldBackgroundOpacity != null)
+            {
+                sldBackgroundOpacity.Value = Math.Max(0.25, Math.Min(1.0, _defaults.BackgroundOpacity));
+            }
             txtPagerHeight.Text = _defaults.PagerHeight.ToString(CultureInfo.InvariantCulture);
             txtPaddingSize.Text = _defaults.PaddingSize.ToString(CultureInfo.InvariantCulture);
             txtIconPaddingX.Text = _defaults.IconPaddingX.ToString(CultureInfo.InvariantCulture);
             txtIconPaddingY.Text = _defaults.IconPaddingY.ToString(CultureInfo.InvariantCulture);
+            chkShowAppInTaskbar.IsChecked = _defaults.ShowAppInTaskbar;
 
             _backgroundColor = _defaults.BackgroundColor;
 
@@ -157,6 +191,15 @@ namespace Switchie
             UpdateRevertButtons();
         }
 
+        private void RevertBackgroundOpacity_Click(object sender, RoutedEventArgs e)
+        {
+            if (sldBackgroundOpacity != null)
+            {
+                sldBackgroundOpacity.Value = Math.Max(0.25, Math.Min(1.0, _defaults.BackgroundOpacity));
+            }
+            UpdateRevertButtons();
+        }
+
         private void RevertPaddingSize_Click(object sender, RoutedEventArgs e)
         {
             txtPaddingSize.Text = _defaults.PaddingSize.ToString(CultureInfo.InvariantCulture);
@@ -172,6 +215,12 @@ namespace Switchie
         private void RevertIconPaddingY_Click(object sender, RoutedEventArgs e)
         {
             txtIconPaddingY.Text = _defaults.IconPaddingY.ToString(CultureInfo.InvariantCulture);
+            UpdateRevertButtons();
+        }
+
+        private void RevertShowAppInTaskbar_Click(object sender, RoutedEventArgs e)
+        {
+            chkShowAppInTaskbar.IsChecked = _defaults.ShowAppInTaskbar;
             UpdateRevertButtons();
         }
 
@@ -278,10 +327,14 @@ namespace Switchie
             {
                 RenderMode = cmbRenderMode.SelectedIndex <= 0 ? 0 : 1,
                 DesktopBorderStyle = cmbDesktopBorderStyle.SelectedIndex <= 0 ? 0 : 1,
+                BackgroundOpacity = sldBackgroundOpacity == null
+                    ? Math.Max(0.25, Math.Min(1.0, _defaults.BackgroundOpacity))
+                    : Math.Max(0.25, Math.Min(1.0, sldBackgroundOpacity.Value)),
                 PagerHeight = pagerHeight,
                 PaddingSize = paddingSize,
                 IconPaddingX = iconPaddingX,
                 IconPaddingY = iconPaddingY,
+                ShowAppInTaskbar = chkShowAppInTaskbar.IsChecked == true,
                 PrimaryUpdateDelay = primaryDelay,
                 SecondaryUpdateDelay = secondaryDelay,
                 BackgroundColor = _backgroundColor,
@@ -313,10 +366,12 @@ namespace Switchie
             {
                 RenderMode = source.RenderMode,
                 DesktopBorderStyle = source.DesktopBorderStyle,
+                BackgroundOpacity = source.BackgroundOpacity,
                 PagerHeight = source.PagerHeight,
                 PaddingSize = source.PaddingSize,
                 IconPaddingX = source.IconPaddingX,
                 IconPaddingY = source.IconPaddingY,
+                ShowAppInTaskbar = source.ShowAppInTaskbar,
                 PrimaryUpdateDelay = source.PrimaryUpdateDelay,
                 SecondaryUpdateDelay = source.SecondaryUpdateDelay,
                 DesktopBorderColor = source.DesktopBorderColor,
@@ -357,12 +412,19 @@ namespace Switchie
 
         private void UpdateRevertButtons()
         {
+            if (btnRevertBackgroundOpacity == null || sldBackgroundOpacity == null)
+            {
+                return;
+            }
+
             btnRevertRenderMode.Visibility = IsDifferent(cmbRenderMode.SelectedIndex, _defaults.RenderMode) ? Visibility.Visible : Visibility.Hidden;
             btnRevertDesktopBorderStyle.Visibility = IsDifferent(cmbDesktopBorderStyle.SelectedIndex, _defaults.DesktopBorderStyle) ? Visibility.Visible : Visibility.Hidden;
+            btnRevertBackgroundOpacity.Visibility = IsDifferent(sldBackgroundOpacity.Value, _defaults.BackgroundOpacity) ? Visibility.Visible : Visibility.Hidden;
             btnRevertPagerHeight.Visibility = IsDifferent(txtPagerHeight.Text, _defaults.PagerHeight) ? Visibility.Visible : Visibility.Hidden;
             btnRevertPaddingSize.Visibility = IsDifferent(txtPaddingSize.Text, _defaults.PaddingSize) ? Visibility.Visible : Visibility.Hidden;
             btnRevertIconPaddingX.Visibility = IsDifferent(txtIconPaddingX.Text, _defaults.IconPaddingX) ? Visibility.Visible : Visibility.Hidden;
             btnRevertIconPaddingY.Visibility = IsDifferent(txtIconPaddingY.Text, _defaults.IconPaddingY) ? Visibility.Visible : Visibility.Hidden;
+            btnRevertShowAppInTaskbar.Visibility = (chkShowAppInTaskbar.IsChecked == true) != _defaults.ShowAppInTaskbar ? Visibility.Visible : Visibility.Hidden;
             btnRevertPrimaryDelay.Visibility = IsDifferent(txtPrimaryDelay.Text, _defaults.PrimaryUpdateDelay) ? Visibility.Visible : Visibility.Hidden;
             btnRevertSecondaryDelay.Visibility = IsDifferent(txtSecondaryDelay.Text, _defaults.SecondaryUpdateDelay) ? Visibility.Visible : Visibility.Hidden;
 
@@ -383,6 +445,11 @@ namespace Switchie
         private static bool IsDifferent(int input, int defaultValue)
         {
             return input != defaultValue;
+        }
+
+        private static bool IsDifferent(double input, double defaultValue)
+        {
+            return Math.Abs(input - defaultValue) > 0.0001;
         }
 
         private void ShowValidationError(string message)

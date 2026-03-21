@@ -24,30 +24,20 @@ namespace Switchie
         public void OnPaint(PaintEventArgs e)
         {
             Graphics g = e.Graphics;
-            Window[] windows;
 
-            // For windows render mode, all windows have to be sorted in z-order to draw from back to front
-            if (Form.WindowRenderMode == MainForm.RenderMode.Windows)
-            {
-                windows = Form.Windows.Where(x => x.VirtualDesktopIndex == VirtualDesktop.VirtualDesktopIndex).OrderBy(x => x.ZOrder).ToArray();
-            }
-            // Otherwise order should stay the same (using process id)
-            else
-            {
-                var windowsEnumerated = Form.Windows.Where(x => x.VirtualDesktopIndex == VirtualDesktop.VirtualDesktopIndex);
+            var visibleWindows = Form.Windows.Where(x =>
+                x.VirtualDesktopIndex == VirtualDesktop.VirtualDesktopIndex &&
+                !WinAPI.IsIconic(x.Handle));
 
-                // Order by process is similar to order in taskbar, as long as the user doesn't move them.
-                // For windows with the same process, keep a deterministic order by z-order.
-                windows = windowsEnumerated
-                    .OrderBy(x => x.ProcessID)
-                    .ThenBy(x => x.ZOrder)
-                    .ToArray();
+            Window[] windows = Form.WindowRenderMode == MainForm.RenderMode.Windows
 
-                /*foreach (var item in windows)
-                {
-                    Debug.WriteLine(item.ProcessID + ": " + item.Handle + " z" + item.ZOrder);
-                }*/
-            }
+                // For windows render mode, all windows have to be sorted in z-order to draw from back to front
+                ? visibleWindows.OrderBy(x => x.ZOrder).ToArray()
+
+                // Otherwise order should stay the same (using process id and handle)
+                // -> Order by process id is similar to order in taskbar, as long as the user doesn't move them.
+                : visibleWindows.OrderBy(x => x.ProcessID).ThenBy(x => x.Handle.ToInt64()).ToArray();
+
             if (windows.Length == 0) return;
 
             int iconPaddingX = Form.IconPaddingX;
@@ -123,10 +113,12 @@ namespace Switchie
                         var y = wnd.Dimensions.Y;
                         x -= AttachedScreen.Bounds.Left;
                         y -= AttachedScreen.Bounds.Top;
-                        var area = new Rectangle(x, y, wnd.Dimensions.Width - Form.BorderSize, wnd.Dimensions.Height - Form.BorderSize);
+                        var area = new Rectangle(
+                            x, y, wnd.Dimensions.Width - Form.BorderSize, wnd.Dimensions.Height - Form.BorderSize);
 
                         // Scale rectangles down to the thumbnail's desired size
-                        var ar = Helpers.AspectRatioResize(new Size(AttachedScreen.Bounds.Width, AttachedScreen.Bounds.Height), 0, Form.PagerHeight);
+                        var ar = Helpers.AspectRatioResize(
+                            new Size(AttachedScreen.Bounds.Width, AttachedScreen.Bounds.Height), 0, Form.PagerHeight);
                         float percentageWidth = (float)ar.Width * 100 / AttachedScreen.Bounds.Width;
                         float percentageHeight = (float)ar.Height * 100 / AttachedScreen.Bounds.Height;
 
