@@ -1,5 +1,10 @@
 # Switchie Changelog
 
+## v1.4.4
+
+Bug fixes:
+- Get it run on more recent Windows 11 versions 24H2, 25H2 
+
 
 ## v1.4.3
 
