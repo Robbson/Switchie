@@ -1,5 +1,5 @@
+using Switchie.GUI;
 using System;
-using System.Data;
 using System.Diagnostics;
 using System.Globalization;
 using System.Reflection.Emit;
@@ -12,7 +12,6 @@ namespace Switchie
 {
     public partial class AppSettingsWindow : System.Windows.Window
     {
-        private readonly AppSettings _defaults = new AppSettings();
         private DrawingColor _desktopBackgroundColor;
         private DrawingColor _desktopBorderColor;
         private DrawingColor _activeDesktopBorderColor;
@@ -21,49 +20,28 @@ namespace Switchie
         private DrawingColor _windowBorderColor;
         private DrawingColor _activeWindowBorderColor;
 
-        private static AppSettings Clone(AppSettings source)
-        {
-            return new AppSettings
-            {
-                RenderMode = source.RenderMode,
-                DesktopBorderStyle = source.DesktopBorderStyle,
-                BackgroundOpacity = source.BackgroundOpacity,
-                PagerHeight = source.PagerHeight,
-                PaddingSize = source.PaddingSize,
-                IconPaddingX = source.IconPaddingX,
-                IconPaddingY = source.IconPaddingY,
-                ShowAppInTaskbar = source.ShowAppInTaskbar,
-                PrimaryUpdateDelay = source.PrimaryUpdateDelay,
-                SecondaryUpdateDelay = source.SecondaryUpdateDelay,
-                DesktopBorderColor = source.DesktopBorderColor,
-                DesktopBackgroundColor = source.DesktopBackgroundColor,
-                ActiveDesktopBorderColor = source.ActiveDesktopBorderColor,
-                WindowBackgroundColor = source.WindowBackgroundColor,
-                ActiveWindowBackgroundColor = source.ActiveWindowBackgroundColor,
-                WindowBorderColor = source.WindowBorderColor,
-                ActiveWindowBorderColor = source.ActiveWindowBorderColor
-            };
-        }
+        private readonly AppSettings _defaults = new AppSettings();
+        private readonly AppSettings _settingsBefore;
 
-        // TODO: Currently only one global settings but we need a currenty copy for the preview
         public AppSettings Settings { get; private set; }
-        private AppSettings _settingsBefore { get; set; }
+        public event Action<AppSettings> PreviewChanged;
 
         public AppSettingsWindow(AppSettings settings)
         {
             InitializeComponent();
 
-            _settingsBefore = Clone(settings);
-            Settings = Clone(settings); // Now without copying
+            _settingsBefore = AppSettings.Clone(settings);
+            Settings = AppSettings.Clone(settings);
+            //Settings = settings;
 
-            cmbRenderMode.Items.Add("Windows");
-            cmbRenderMode.Items.Add("Icons");
+            cmbDesktopModeDefault.Items.Add("Windows");
+            cmbDesktopModeDefault.Items.Add("Icons");
+            cmbDesktopModeDefault.SelectedIndex = (int)Settings.DesktopModeDefault; //Math.Max(0, Math.Min(1, Settings.DesktopModeDefault));
+            txtPagerHeight.Text = Settings.PagerHeight.ToString(CultureInfo.InvariantCulture);
+            txtPaddingSize.Text = Settings.PaddingSize.ToString(CultureInfo.InvariantCulture);
+            txtIconPaddingX.Text = Settings.IconPaddingX.ToString(CultureInfo.InvariantCulture);
+            txtIconPaddingY.Text = Settings.IconPaddingY.ToString(CultureInfo.InvariantCulture);
 
-            cmbDesktopBorderStyle.Items.Add("Box");
-            cmbDesktopBorderStyle.Items.Add("Underline");
-
-            cmbRenderMode.SelectedIndex = Math.Max(0, Math.Min(1, Settings.RenderMode));
-            cmbDesktopBorderStyle.SelectedIndex = Math.Max(0, Math.Min(1, Settings.DesktopBorderStyle));
             if (sldBackgroundOpacity != null)
             {
                 sldBackgroundOpacity.Value = Math.Max(0.25, Math.Min(1.0, Settings.BackgroundOpacity));
@@ -72,14 +50,10 @@ namespace Switchie
             {
                 txtBackgroundOpacityValue.Text = sldBackgroundOpacity.Value.ToString("0.00", CultureInfo.InvariantCulture);
             }
-            txtPagerHeight.Text = Settings.PagerHeight.ToString(CultureInfo.InvariantCulture);
-            txtPaddingSize.Text = Settings.PaddingSize.ToString(CultureInfo.InvariantCulture);
-            txtIconPaddingX.Text = Settings.IconPaddingX.ToString(CultureInfo.InvariantCulture);
-            txtIconPaddingY.Text = Settings.IconPaddingY.ToString(CultureInfo.InvariantCulture);
-            chkShowAppInTaskbar.IsChecked = Settings.ShowAppInTaskbar;
-
+            cmbDesktopBorderStyle.Items.Add("Box");
+            cmbDesktopBorderStyle.Items.Add("Underline");
+            cmbDesktopBorderStyle.SelectedIndex = (int)Settings.DesktopBorderStyle; //Math.Max(0, Math.Min(1, Settings.DesktopBorderStyle));
             _desktopBackgroundColor = Settings.DesktopBackgroundColor;
-
             _desktopBorderColor = Settings.DesktopBorderColor;
             _activeDesktopBorderColor = Settings.ActiveDesktopBorderColor;
             _windowBackgroundColor = Settings.WindowBackgroundColor;
@@ -89,6 +63,7 @@ namespace Switchie
 
             txtPrimaryDelay.Text = Settings.PrimaryUpdateDelay.ToString(CultureInfo.InvariantCulture);
             txtSecondaryDelay.Text = Settings.SecondaryUpdateDelay.ToString(CultureInfo.InvariantCulture);
+            chkShowAppInTaskbar.IsChecked = Settings.ShowAppInTaskbar;
 
             RefreshColorPreviews();
             UpdateRevertButtons();
@@ -96,102 +71,134 @@ namespace Switchie
 
         private void ResetToDefaults_Click(object sender, RoutedEventArgs e)
         {
-            cmbRenderMode.SelectedIndex = _defaults.RenderMode <= 0 ? 0 : 1;
-            cmbDesktopBorderStyle.SelectedIndex = _defaults.DesktopBorderStyle <= 0 ? 0 : 1;
-            if (sldBackgroundOpacity != null)
+            if (tabControl.SelectedIndex == 0)
             {
-                sldBackgroundOpacity.Value = Math.Max(0.25, Math.Min(1.0, _defaults.BackgroundOpacity));
+                cmbDesktopModeDefault.SelectedIndex = _defaults.DesktopModeDefault <= 0 ? 0 : 1;
+                txtPagerHeight.Text = _defaults.PagerHeight.ToString(CultureInfo.InvariantCulture);
+                txtPaddingSize.Text = _defaults.PaddingSize.ToString(CultureInfo.InvariantCulture);
+                txtIconPaddingX.Text = _defaults.IconPaddingX.ToString(CultureInfo.InvariantCulture);
+                txtIconPaddingY.Text = _defaults.IconPaddingY.ToString(CultureInfo.InvariantCulture);
             }
-            txtPagerHeight.Text = _defaults.PagerHeight.ToString(CultureInfo.InvariantCulture);
-            txtPaddingSize.Text = _defaults.PaddingSize.ToString(CultureInfo.InvariantCulture);
-            txtIconPaddingX.Text = _defaults.IconPaddingX.ToString(CultureInfo.InvariantCulture);
-            txtIconPaddingY.Text = _defaults.IconPaddingY.ToString(CultureInfo.InvariantCulture);
-            chkShowAppInTaskbar.IsChecked = _defaults.ShowAppInTaskbar;
-
-            _desktopBackgroundColor = _defaults.DesktopBackgroundColor;
-
-            _desktopBorderColor = _defaults.DesktopBorderColor;
-            _activeDesktopBorderColor = _defaults.ActiveDesktopBorderColor;
-            _windowBackgroundColor = _defaults.WindowBackgroundColor;
-            _activeWindowBackgroundColor = _defaults.ActiveWindowBackgroundColor;
-            _windowBorderColor = _defaults.WindowBorderColor;
-            _activeWindowBorderColor = _defaults.ActiveWindowBorderColor;
-
-            txtPrimaryDelay.Text = _defaults.PrimaryUpdateDelay.ToString(CultureInfo.InvariantCulture);
-            txtSecondaryDelay.Text = _defaults.SecondaryUpdateDelay.ToString(CultureInfo.InvariantCulture);
+            else if (tabControl.SelectedIndex == 1)
+            {
+                if (sldBackgroundOpacity != null)
+                {
+                    sldBackgroundOpacity.Value = Math.Max(0.25, Math.Min(1.0, _defaults.BackgroundOpacity));
+                }
+                cmbDesktopBorderStyle.SelectedIndex = _defaults.DesktopBorderStyle <= 0 ? 0 : 1;
+                _desktopBackgroundColor = _defaults.DesktopBackgroundColor;
+                _desktopBorderColor = _defaults.DesktopBorderColor;
+                _activeDesktopBorderColor = _defaults.ActiveDesktopBorderColor;
+                _windowBackgroundColor = _defaults.WindowBackgroundColor;
+                _activeWindowBackgroundColor = _defaults.ActiveWindowBackgroundColor;
+                _windowBorderColor = _defaults.WindowBorderColor;
+                _activeWindowBorderColor = _defaults.ActiveWindowBorderColor;
+                RequestPreview();
+            }
+            else if (tabControl.SelectedIndex == 2)
+            {
+                txtPrimaryDelay.Text = _defaults.PrimaryUpdateDelay.ToString(CultureInfo.InvariantCulture);
+                txtSecondaryDelay.Text = _defaults.SecondaryUpdateDelay.ToString(CultureInfo.InvariantCulture);
+                chkShowAppInTaskbar.IsChecked = _defaults.ShowAppInTaskbar;
+            }
 
             RefreshColorPreviews();
             UpdateRevertButtons();
         }
 
-        private void Save_Click(object sender, RoutedEventArgs e)
+        private void ShowValidationError(string message)
         {
+            MessageBox.Show(this, message, "Invalid Settings", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+
+        private AppSettings BuildSettingsFromControls()
+        {
+            // Because initial (not) set values can trigger previews with invalid values
+            if (!IsLoaded) return null;
+
+            // Validation first
             if (!TryParsePositiveInt(txtPagerHeight.Text, 1, out int pagerHeight))
             {
                 ShowValidationError("Pager Height must be a positive number.");
-                return;
+                return null;
             }
 
             if (!TryParsePositiveInt(txtPaddingSize.Text, 0, out int paddingSize))
             {
                 ShowValidationError("Padding Size must be 0 or greater.");
-                return;
+                return null;
             }
 
             if (!TryParseInt(txtIconPaddingX.Text, out int iconPaddingX))
             {
                 ShowValidationError("Icon Padding X must be a valid whole number.");
-                return;
+                return null;
             }
 
             if (!TryParseInt(txtIconPaddingY.Text, out int iconPaddingY))
             {
                 ShowValidationError("Icon Padding Y must be a valid whole number.");
-                return;
+                return null;
             }
 
             if (!TryParsePositiveInt(txtPrimaryDelay.Text, 1, out int primaryDelay))
             {
                 ShowValidationError("Primary Update Delay must be at least 1 ms.");
-                return;
+                return null;
             }
 
             if (!TryParsePositiveInt(txtSecondaryDelay.Text, 100, out int secondaryDelay))
             {
                 ShowValidationError("Secondary Update Delay must be at least 100 ms.");
-                return;
+                return null;
             }
 
-            Settings = new AppSettings
+            return new AppSettings
             {
-                RenderMode = cmbRenderMode.SelectedIndex <= 0 ? 0 : 1,
-                DesktopBorderStyle = cmbDesktopBorderStyle.SelectedIndex <= 0 ? 0 : 1,
-                BackgroundOpacity = sldBackgroundOpacity == null
-                    ? Math.Max(0.25, Math.Min(1.0, _defaults.BackgroundOpacity))
-                    : Math.Max(0.25, Math.Min(1.0, sldBackgroundOpacity.Value)),
+                DesktopModeDefault = (DesktopMode)(cmbDesktopModeDefault.SelectedIndex <= 0 ? 0 : 1),
                 PagerHeight = pagerHeight,
                 PaddingSize = paddingSize,
                 IconPaddingX = iconPaddingX,
                 IconPaddingY = iconPaddingY,
-                ShowAppInTaskbar = chkShowAppInTaskbar.IsChecked == true,
-                PrimaryUpdateDelay = primaryDelay,
-                SecondaryUpdateDelay = secondaryDelay,
+
+                BackgroundOpacity = sldBackgroundOpacity == null
+                    ? Math.Max(0.25, Math.Min(1.0, _defaults.BackgroundOpacity))
+                    : Math.Max(0.25, Math.Min(1.0, sldBackgroundOpacity.Value)),
+                DesktopBorderStyle = (BorderStyle)(cmbDesktopBorderStyle.SelectedIndex <= 0 ? 0 : 1),
                 DesktopBackgroundColor = _desktopBackgroundColor,
                 DesktopBorderColor = _desktopBorderColor,
                 ActiveDesktopBorderColor = _activeDesktopBorderColor,
                 WindowBackgroundColor = _windowBackgroundColor,
                 ActiveWindowBackgroundColor = _activeWindowBackgroundColor,
                 WindowBorderColor = _windowBorderColor,
-                ActiveWindowBorderColor = _activeWindowBorderColor
-            };
+                ActiveWindowBorderColor = _activeWindowBorderColor,
 
-            DialogResult = true;
-            Close();
+                PrimaryUpdateDelay = primaryDelay,
+                SecondaryUpdateDelay = secondaryDelay,
+                ShowAppInTaskbar = chkShowAppInTaskbar.IsChecked == true,
+            };
         }
 
-        private void ShowValidationError(string message)
+        // TODO: Do I still need this Event when I know modify the options directly
+        // -> Well, for recalculations it s necessary
+        private void RequestPreview()
         {
-            MessageBox.Show(this, message, "Invalid Settings", MessageBoxButton.OK, MessageBoxImage.Warning);
+            // We don't need to pass the settings anymore if we can manipulate the settings directly (what happened by PreviewChanged before anyway)
+            var s = BuildSettingsFromControls();
+
+            if (s != null)
+            {
+                //Settings = s;
+                PreviewChanged?.Invoke(s);   // invalid input: keep last good preview
+            }
+        }
+
+        private void Save_Click(object sender, RoutedEventArgs e)
+        {
+            Settings = BuildSettingsFromControls();
+            if (Settings == null) return;
+            DialogResult = true;
+            Close();
         }
 
         private void UpdateRevertButtons()
@@ -201,17 +208,14 @@ namespace Switchie
                 return;
             }
 
-            btnRevertRenderMode.Visibility = IsDifferent(cmbRenderMode.SelectedIndex, _settingsBefore.RenderMode) ? Visibility.Visible : Visibility.Hidden;
-            btnRevertDesktopBorderStyle.Visibility = IsDifferent(cmbDesktopBorderStyle.SelectedIndex, _settingsBefore.DesktopBorderStyle) ? Visibility.Visible : Visibility.Hidden;
-            btnRevertBackgroundOpacity.Visibility = IsDifferent(sldBackgroundOpacity.Value, _settingsBefore.BackgroundOpacity) ? Visibility.Visible : Visibility.Hidden;
+            btnRevertDesktopModeDefault.Visibility = cmbDesktopModeDefault.SelectedIndex != (int)_settingsBefore.DesktopModeDefault ? Visibility.Visible : Visibility.Hidden;
             btnRevertPagerHeight.Visibility = IsDifferent(txtPagerHeight.Text, _settingsBefore.PagerHeight) ? Visibility.Visible : Visibility.Hidden;
             btnRevertPaddingSize.Visibility = IsDifferent(txtPaddingSize.Text, _settingsBefore.PaddingSize) ? Visibility.Visible : Visibility.Hidden;
             btnRevertIconPaddingX.Visibility = IsDifferent(txtIconPaddingX.Text, _settingsBefore.IconPaddingX) ? Visibility.Visible : Visibility.Hidden;
             btnRevertIconPaddingY.Visibility = IsDifferent(txtIconPaddingY.Text, _settingsBefore.IconPaddingY) ? Visibility.Visible : Visibility.Hidden;
-            btnRevertShowAppInTaskbar.Visibility = (chkShowAppInTaskbar.IsChecked == true) != _settingsBefore.ShowAppInTaskbar ? Visibility.Visible : Visibility.Hidden;
-            btnRevertPrimaryDelay.Visibility = IsDifferent(txtPrimaryDelay.Text, _settingsBefore.PrimaryUpdateDelay) ? Visibility.Visible : Visibility.Hidden;
-            btnRevertSecondaryDelay.Visibility = IsDifferent(txtSecondaryDelay.Text, _settingsBefore.SecondaryUpdateDelay) ? Visibility.Visible : Visibility.Hidden;
 
+            btnRevertBackgroundOpacity.Visibility = IsDifferent(sldBackgroundOpacity.Value, _settingsBefore.BackgroundOpacity) ? Visibility.Visible : Visibility.Hidden;
+            btnRevertDesktopBorderStyle.Visibility = cmbDesktopBorderStyle.SelectedIndex != (int)_settingsBefore.DesktopBorderStyle ? Visibility.Visible : Visibility.Hidden;
             btnRevertBackgroundColor.Visibility = _desktopBackgroundColor.ToArgb() != _settingsBefore.DesktopBackgroundColor.ToArgb() ? Visibility.Visible : Visibility.Hidden;
             btnRevertDesktopColor.Visibility = _desktopBorderColor.ToArgb() != _settingsBefore.DesktopBorderColor.ToArgb() ? Visibility.Visible : Visibility.Hidden;
             btnRevertActiveDesktopBorderColor.Visibility = _activeDesktopBorderColor.ToArgb() != _settingsBefore.ActiveDesktopBorderColor.ToArgb() ? Visibility.Visible : Visibility.Hidden;
@@ -219,19 +223,13 @@ namespace Switchie
             btnRevertActiveWindowColor.Visibility = _activeWindowBackgroundColor.ToArgb() != _settingsBefore.ActiveWindowBackgroundColor.ToArgb() ? Visibility.Visible : Visibility.Hidden;
             btnRevertWindowBorderColor.Visibility = _windowBorderColor.ToArgb() != _settingsBefore.WindowBorderColor.ToArgb() ? Visibility.Visible : Visibility.Hidden;
             btnRevertActiveWindowBorderColor.Visibility = _activeWindowBorderColor.ToArgb() != _settingsBefore.ActiveWindowBorderColor.ToArgb() ? Visibility.Visible : Visibility.Hidden;
+
+            btnRevertPrimaryDelay.Visibility = IsDifferent(txtPrimaryDelay.Text, _settingsBefore.PrimaryUpdateDelay) ? Visibility.Visible : Visibility.Hidden;
+            btnRevertSecondaryDelay.Visibility = IsDifferent(txtSecondaryDelay.Text, _settingsBefore.SecondaryUpdateDelay) ? Visibility.Visible : Visibility.Hidden;
+            btnRevertShowAppInTaskbar.Visibility = (chkShowAppInTaskbar.IsChecked == true) != _settingsBefore.ShowAppInTaskbar ? Visibility.Visible : Visibility.Hidden;
         }
 
-        #region Generic control handlers, parsers & utilites
-        private void TextInputChanged(object sender, TextChangedEventArgs e)
-        {
-            UpdateRevertButtons();
-        }
-
-        private void BooleanInputChanged(object sender, RoutedEventArgs e)
-        {
-            UpdateRevertButtons();
-        }
-
+        #region Generic arsers & utilites
         private static bool TryParsePositiveInt(string input, int min, out int value)
         {
             return int.TryParse(input, NumberStyles.Integer, CultureInfo.InvariantCulture, out value) && value >= min;
@@ -258,31 +256,24 @@ namespace Switchie
         }
         #endregion
 
-        #region General Tab Handlers 
-        private void RenderModeChanged(object sender, SelectionChangedEventArgs e)
+        #region Layout Tab Handlers 
+        private void DesktopModeDefaultChanged(object sender, SelectionChangedEventArgs e)
         {
+            UpdateRevertButtons();
+            RequestPreview();
+        }
+
+        private void RevertDesktopModeDefault_Click(object sender, RoutedEventArgs e)
+        {
+            cmbDesktopModeDefault.SelectedIndex = _settingsBefore.DesktopModeDefault <= 0 ? 0 : 1;
             UpdateRevertButtons();
         }
 
-        private void BackgroundOpacityChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        // THIS is very special because it needs recalulation in the MainFrame
+        private void PagerHeightChanged(object sender, TextChangedEventArgs e)
         {
-            if (txtBackgroundOpacityValue != null)
-            {
-                txtBackgroundOpacityValue.Text = sldBackgroundOpacity.Value.ToString("0.00", CultureInfo.InvariantCulture);
-            }
-
-            if (!IsLoaded)
-            {
-                return;
-            }
-
             UpdateRevertButtons();
-        }
-
-        private void RevertRenderMode_Click(object sender, RoutedEventArgs e)
-        {
-            cmbRenderMode.SelectedIndex = _settingsBefore.RenderMode <= 0 ? 0 : 1;
-            UpdateRevertButtons();
+            //TODO: Preview Suppoer with those notices from AI help
         }
 
         private void RevertPagerHeight_Click(object sender, RoutedEventArgs e)
@@ -291,19 +282,11 @@ namespace Switchie
             UpdateRevertButtons();
         }
 
-        private void RevertDesktopBorderStyle_Click(object sender, RoutedEventArgs e)
+        // For: PaddingSize, IconPaddingX and IconPaddingY
+        private void PaddingInputChanged(object sender, TextChangedEventArgs e)
         {
-            cmbDesktopBorderStyle.SelectedIndex = _settingsBefore.DesktopBorderStyle <= 0 ? 0 : 1;
             UpdateRevertButtons();
-        }
-
-        private void RevertBackgroundOpacity_Click(object sender, RoutedEventArgs e)
-        {
-            if (sldBackgroundOpacity != null)
-            {
-                sldBackgroundOpacity.Value = Math.Max(0.25, Math.Min(1.0, _settingsBefore.BackgroundOpacity));
-            }
-            UpdateRevertButtons();
+            RequestPreview();
         }
 
         private void RevertPaddingSize_Click(object sender, RoutedEventArgs e)
@@ -323,19 +306,46 @@ namespace Switchie
             txtIconPaddingY.Text = _settingsBefore.IconPaddingY.ToString(CultureInfo.InvariantCulture);
             UpdateRevertButtons();
         }
-
-        private void RevertShowAppInTaskbar_Click(object sender, RoutedEventArgs e)
-        {
-            chkShowAppInTaskbar.IsChecked = _settingsBefore.ShowAppInTaskbar;
-            UpdateRevertButtons();
-        }
         #endregion
 
-        #region Colors Tab Handlers 
+        #region Theme Tab Handlers
+        private void BackgroundOpacityChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            //if (!IsLoaded) return;
+            if (txtBackgroundOpacityValue != null)
+            {
+                txtBackgroundOpacityValue.Text = sldBackgroundOpacity.Value.ToString("0.00", CultureInfo.InvariantCulture);
+            }
+            UpdateRevertButtons();
+            RequestPreview();
+        }
+
+        private void RevertBackgroundOpacity_Click(object sender, RoutedEventArgs e)
+        {
+            if (sldBackgroundOpacity != null)
+            {
+                sldBackgroundOpacity.Value = Math.Max(0.25, Math.Min(1.0, _settingsBefore.BackgroundOpacity));
+            }
+            UpdateRevertButtons();
+        }
+
+        private void DesktopBorderStyleChanged(object sender, SelectionChangedEventArgs e)
+        {
+            UpdateRevertButtons();
+            RequestPreview();
+        }
+
+        private void RevertDesktopBorderStyle_Click(object sender, RoutedEventArgs e)
+        {
+            cmbDesktopBorderStyle.SelectedIndex = _settingsBefore.DesktopBorderStyle <= 0 ? 0 : 1;
+            UpdateRevertButtons();
+        }
+
         private void UpdateColorsTab()
         {
             RefreshColorPreviews();
             UpdateRevertButtons();
+            RequestPreview(); // NEW: Live Preview for colors
         }
 
         private void ChooseColor(ref DrawingColor color)
@@ -353,6 +363,7 @@ namespace Switchie
         private void ChooseDesktopBackgroundColor_Click(object sender, RoutedEventArgs e)
         {
             ChooseColor(ref _desktopBackgroundColor);
+            Settings.DesktopBackgroundColor = _desktopBackgroundColor;
         }
 
         private void ChooseDesktopBorderColor_Click(object sender, RoutedEventArgs e)
@@ -447,7 +458,17 @@ namespace Switchie
         }
         #endregion
 
-        # region Performance Tab Handlers
+        #region Misc Tab Handlers
+        private void MiscTextInputChanged(object sender, TextChangedEventArgs e)
+        {
+            UpdateRevertButtons();
+        }
+
+        private void MiscBooleanInputChanged(object sender, RoutedEventArgs e)
+        {
+            UpdateRevertButtons();
+        }
+
         private void RevertPrimaryDelay_Click(object sender, RoutedEventArgs e)
         {
             txtPrimaryDelay.Text = _settingsBefore.PrimaryUpdateDelay.ToString(CultureInfo.InvariantCulture);
@@ -457,6 +478,12 @@ namespace Switchie
         private void RevertSecondaryDelay_Click(object sender, RoutedEventArgs e)
         {
             txtSecondaryDelay.Text = _settingsBefore.SecondaryUpdateDelay.ToString(CultureInfo.InvariantCulture);
+            UpdateRevertButtons();
+        }
+
+        private void RevertShowAppInTaskbar_Click(object sender, RoutedEventArgs e)
+        {
+            chkShowAppInTaskbar.IsChecked = _settingsBefore.ShowAppInTaskbar;
             UpdateRevertButtons();
         }
         #endregion

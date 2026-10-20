@@ -7,7 +7,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
-namespace Switchie
+namespace Switchie.GUI
 {
     public class VirtualDesktopScreen
     {
@@ -29,9 +29,9 @@ namespace Switchie
                 x.VirtualDesktopIndex == VirtualDesktop.VirtualDesktopIndex &&
                 !WinAPI.IsIconic(x.Handle));
 
-            Window[] windows = Form.WindowRenderMode == MainForm.RenderMode.Windows
+            Window[] windows = Form.Options.DesktopModeDefault == DesktopMode.Preview
 
-                // For windows render mode, all windows have to be sorted in z-order to draw from back to front
+                // For desktop preview mode, all windows have to be sorted in z-order to draw from back to front
                 ? visibleWindows.OrderBy(x => x.ZOrder).ToArray()
 
                 // Otherwise order should stay the same (using process id and handle)
@@ -40,9 +40,9 @@ namespace Switchie
 
             if (windows.Length == 0) return;
 
-            int iconPaddingX = Form.IconPaddingX;
-            int iconPaddingY = Form.IconPaddingY;
-            int border = Form.PaddingSize;
+            int iconPaddingX = Form.Options.IconPaddingX;
+            int iconPaddingY = Form.Options.IconPaddingY;
+            int border = Form.Options.PaddingSize;
 
             // Reduce available content space by border
             int width = Size.Width - border * 2;
@@ -63,12 +63,12 @@ namespace Switchie
             int wnum = windows.Length - 1;
             foreach (var wnd in windows)
             {
-                Color fillColor = wnd.IsActive ? Form.ActiveWindowColor : Form.WindowColor;
-                Color borderColor = wnd.IsActive ? Form.ActiveWindowBorderColor : Form.WindowBorderColor;
+                Color fillColor = wnd.IsActive ? Form.Options.ActiveWindowBackgroundColor : Form.Options.WindowBackgroundColor;
+                Color borderColor = wnd.IsActive ? Form.Options.ActiveWindowBorderColor : Form.Options.WindowBorderColor;
 
                 if (Screen.FromHandle(wnd.Handle).DeviceName == AttachedScreen.DeviceName)
                 {
-                    if (Form.WindowRenderMode == MainForm.RenderMode.Icons)
+                    if (Form.Options.DesktopModeDefault == DesktopMode.MicroTaskbar)
                     {
                         int yPos;
                         int xPos = border / 2 + Location.X + wcounter * hSpace;
@@ -118,7 +118,7 @@ namespace Switchie
 
                         // Scale rectangles down to the thumbnail's desired size
                         var ar = Helpers.AspectRatioResize(
-                            new Size(AttachedScreen.Bounds.Width, AttachedScreen.Bounds.Height), 0, Form.PagerHeight);
+                            new Size(AttachedScreen.Bounds.Width, AttachedScreen.Bounds.Height), 0, Form.Options.PagerHeight);
                         float percentageWidth = (float)ar.Width * 100 / AttachedScreen.Bounds.Width;
                         float percentageHeight = (float)ar.Height * 100 / AttachedScreen.Bounds.Height;
 

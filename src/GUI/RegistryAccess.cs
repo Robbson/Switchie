@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Switchie
+namespace Switchie.GUI
 {
     public class RegistryAccess
     {
@@ -32,19 +32,19 @@ namespace Switchie
             key.Close();
         }
 
-        public static int getRenderMode()
+        public static int GetDesktopModeDefault()
         {
             RegistryKey key = Registry.CurrentUser.OpenSubKey(registryKey);
             if (key == null) return 0;
-            var renderMode = key.GetValue("RenderMode");
-            if (renderMode == null) return 0;
-            return int.Parse(key.GetValue("RenderMode").ToString());
+            var desktopModeDefault = key.GetValue("DesktopModeDefault");
+            if (desktopModeDefault == null) return 0;
+            return int.Parse(desktopModeDefault.ToString());
         }
 
-        public static void saveRenderMode(int renderMode)
+        public static void SaveDesktopModeDefault(int renderMode)
         {
             RegistryKey key = Registry.CurrentUser.CreateSubKey(registryKey);
-            key.SetValue("RenderMode", renderMode);
+            key.SetValue("DesktopModeDefault", renderMode);
             key.Close();
         }
     }

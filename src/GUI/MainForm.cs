@@ -5,12 +5,13 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Runtime;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Interop;
 
-namespace Switchie
+namespace Switchie.GUI
 {
     // Pager main application form
     public class MainForm : Form
@@ -19,7 +20,7 @@ namespace Switchie
             typeof(MainForm).Assembly.GetName().Version?.ToString(3)
             ?? Application.ProductVersion;
 
-        // --- Internal Application State ---
+        // --- Internal Application State (TODO: Refactor, what should be really public?) ---
         private bool _isAppPinned = false;
         //private bool _forceAppAlwaysOnTop = false;
 
@@ -33,85 +34,55 @@ namespace Switchie
         private Point dragOffset;
         public bool IsDraggingWindow { get; set; }
 
-        // --- Application Settings: Static ---
+        // Why property?
         public int BorderSize { get; } = 1;
 
-        // --- Application Settings: Configurable by user ---
-        private AppSettings _appSettings;
-
-        public double BackgroundOpacity { get; set; } = 1.0;
-
-        public Color BackgroundColor { get; set; } = Color.FromArgb(64, 64, 64);
-
-        public Color DesktopBorderColor { get; set; } = Color.FromArgb(32, 32, 32);
-        public Color ActiveDesktopBorderColor { get; set; } = Color.LightBlue;
-        public enum BorderStyle { Box, Underline };
-        public BorderStyle DesktopBorderStyle { get; set; } = BorderStyle.Box;
-
-        public Color WindowColor { get; set; } = Color.FromArgb(255, Color.Gray);
-        public Color ActiveWindowColor { get; set; } = Color.FromArgb(255, Color.Silver);
-
-        public Color WindowBorderColor { get; set; } = Color.Silver;
-        public Color ActiveWindowBorderColor { get; set; } = Color.White;
-
-        public int PagerHeight { get; set; } = 40; // Width is calculated from that
-
-        public enum RenderMode { Windows, Icons }
-        public RenderMode WindowRenderMode { get; set; } = RenderMode.Windows;
-
-        public int PaddingSize { get; set; } = 1;
-        public int IconPaddingX { get; set; } = 0;
-        public int IconPaddingY { get; set; } = 0;
-
-        private int PrimaryUpdateDelay { get; set; } = 200;
-        private int SecondaryUpdateDelay { get; set; } = 500;
-
-        // This works only when the pinning is manually done by the user after application has started
-        // (because auto pinning will always fail)
-        // -> Currently not configurable
-        private bool ShowAppInTaskbar { get; set; } = true;
+        // Application Options: Configurable by user
+        public AppSettings Options { get; private set; }
 
         public MainForm()
         {
             SuspendLayout();
-            Name = "frmMain";
 
+            // Form properties set to defaults
+            Name = "frmMain";
             DoubleBuffered = true;
             AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-
             StartPosition = FormStartPosition.Manual;
             ControlBox = false;
             MaximizeBox = false;
             MinimizeBox = false;
             TopMost = true;
             AllowDrop = true;
-
-            _appSettings = AppSettingsStore.Load();
-            ApplySettings(_appSettings, false);
-
-            BackColor = BackgroundColor;
-            Opacity = BackgroundOpacity;
-
             FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             Icon = new System.Drawing.Icon(
                 new MemoryStream(Helpers.GetResourceFromAssembly(typeof(Program), "Switchie.Resources.icon.ico")));
 
-            ShowInTaskbar = ShowAppInTaskbar;
+            var storedLocation = RegistryAccess.RestoreLocation();
+            Location = storedLocation ?? GetDefaultLocation();
 
-            // Collect all virtual desktops and add mouse event listeners to them
+            Options = new AppSettings();
+            Options = AppSettingsStore.Load();
+            ApplySettings(Options, false);
+
+            // Form properties set to configurable options
+            BackColor = Options.DesktopBackgroundColor;
+            Opacity = Options.BackgroundOpacity;
+            ShowInTaskbar = Options.ShowAppInTaskbar;
+
+            // Collect all virtual desktops and add mouse event listeners to them (uses PagerHeight)
             GetVirtualDesktopsAndAddMouseHandlers(_virtualDesktops);
 
             // Pager size depending on current amount of virtual desktops
-            Size = new Size(_virtualDesktops.Sum(x => x.Size.Width), PagerHeight);
+            Size = new Size(_virtualDesktops.Sum(x => x.Size.Width), Options.PagerHeight);
             MinimumSize = Size;
             MaximumSize = Size;
             ClientSize = Size;
 
-            var storedLocation = RegistryAccess.RestoreLocation();
-            Location = storedLocation ?? GetDefaultLocation();
-
             ResumeLayout(false);
+
+            // Event handler registration
             Shown += OnShown;
             MouseUp += OnMouseUp;
             MouseDown += OnMouseDown;
@@ -158,7 +129,7 @@ namespace Switchie
             GetVirtualDesktopsAndAddMouseHandlers(_virtualDesktops);
 
             SuspendLayout();
-            var newSize = new Size(_virtualDesktops.Sum(d => d.Size.Width), PagerHeight);
+            var newSize = new Size(_virtualDesktops.Sum(d => d.Size.Width), Options.PagerHeight);
             ClientSize = newSize;
             MinimumSize = newSize;
             MaximumSize = newSize;
@@ -191,7 +162,7 @@ namespace Switchie
                     {
                         try
                         {
-                            // Probably now required anymore, now that we have covering detection
+                            // Probably not required anymore, now that we have covering detection
                             //if (_forceAlwaysOnTop) WindowManager.SetAlwaysOnTop(Handle, _forceAlwaysOnTop);
 
                             // Change Detection via Hash (calculated on basic parameters of all opened windows)
@@ -217,7 +188,7 @@ namespace Switchie
                     }));
 
                     // So we don't waste too many CPU cycles
-                    await Task.Delay(PrimaryUpdateDelay);
+                    await Task.Delay(Options.PrimaryUpdateDelay);
                 }
             });
 
@@ -238,11 +209,16 @@ namespace Switchie
 
                         if (HasDesktopCountChanged())
                         {
+                            // TODO: Adjust the list length for the individual view settings
+
                             ResetVirtualDesktop();
                         }
 
+                        // This works only when the pinning is manually done by the user after application has started
+                        // (because auto pinning will always fail)
+
                         // This should only be the case at start up, right
-                        if (ShowAppInTaskbar && !_isAppPinned)
+                        if (Options.ShowAppInTaskbar && !_isAppPinned)
                         {
                             try
                             {
@@ -261,7 +237,7 @@ namespace Switchie
                         }
                         catch { }
                     }));
-                    await Task.Delay(SecondaryUpdateDelay);
+                    await Task.Delay(Options.SecondaryUpdateDelay);
                 }
             });
         }
@@ -302,14 +278,14 @@ namespace Switchie
             Helpers.AddMenuItem(this, menu,
                  new ToolStripMenuItem()
                  {
-                     Text = "Toggle Render Mode",
+                     Text = "Toggle Desktop Mode",
                      Image = Helpers.CreateGlyphBitmap("↔")
                  },
                  () =>
                  {
-                     WindowRenderMode = WindowRenderMode == RenderMode.Icons ? RenderMode.Windows : RenderMode.Icons;
-                     _appSettings.RenderMode = (int)WindowRenderMode;
-                     AppSettingsStore.Save(_appSettings);
+                     //TODO: Individual Mode per desktop
+                     Options.DesktopModeDefault = Options.DesktopModeDefault == DesktopMode.MicroTaskbar ? DesktopMode.Preview : DesktopMode.MicroTaskbar;
+                     AppSettingsStore.Save(Options);
                      Invalidate();
                  });
 
@@ -383,17 +359,56 @@ namespace Switchie
 
         private void OpenSettingsDialog()
         {
-            var settingsWindow = new AppSettingsWindow(_appSettings);
+            var originalSettings = Options; //AppSettings.Clone(Options);
+            var settingsWindow = new AppSettingsWindow(Options);
             new WindowInteropHelper(settingsWindow) { Owner = Handle };
+
+            settingsWindow.PreviewChanged += s => PreviewSettings(s);
 
             bool? result = settingsWindow.ShowDialog();
             if (result == true)
             {
-                _appSettings = settingsWindow.Settings;
-                ApplySettings(_appSettings, true);
+                Options = settingsWindow.Settings;
+                ApplySettings(Options, true); // save and reset to new settings
+            }
+            else
+            {
+                Options = originalSettings;
+                ApplySettings(Options, false); // restore visuals
             }
         }
 
+        public void PreviewSettings(AppSettings settings)
+        {
+            ApplySettings(settings, false);
+
+            // Apply MainForm propertes
+            ShowInTaskbar = Options.ShowAppInTaskbar;
+            BackColor = Options.DesktopBackgroundColor;
+            Opacity = Math.Max(0.25, Math.Min(1.0, Options.BackgroundOpacity));
+
+            Invalidate();
+        }
+
+        private void ApplySettings(AppSettings settings, bool persist)
+        {
+            Options = settings;
+
+            // Apply MainForm propertes
+            ShowInTaskbar = Options.ShowAppInTaskbar;
+            BackColor = Options.DesktopBackgroundColor;
+            Opacity = Math.Max(0.25, Math.Min(1.0, Options.BackgroundOpacity));
+
+            Invalidate();
+
+            if (persist)
+            {
+                AppSettingsStore.Save(settings);
+                ResetVirtualDesktop();
+            }
+        }
+
+        // TODO: Seperate it from the MainForm
         private void OpenAboutDialog()
         {
             using (var aboutDialog = new Form())
@@ -494,41 +509,6 @@ namespace Switchie
                 aboutDialog.Controls.Add(closeButton);
 
                 aboutDialog.ShowDialog(this);
-            }
-        }
-
-        private void ApplySettings(AppSettings settings, bool persist)
-        {
-            PagerHeight = settings.PagerHeight;
-            PaddingSize = settings.PaddingSize;
-            IconPaddingX = settings.IconPaddingX;
-            IconPaddingY = settings.IconPaddingY;
-            BackgroundOpacity = Math.Max(0.25, Math.Min(1.0, settings.BackgroundOpacity));
-
-            BackgroundColor = settings.DesktopBackgroundColor;
-            DesktopBorderColor = settings.DesktopBorderColor;
-            ActiveDesktopBorderColor = settings.ActiveDesktopBorderColor;
-            WindowColor = settings.WindowBackgroundColor;
-            ActiveWindowColor = settings.ActiveWindowBackgroundColor;
-            WindowBorderColor = settings.WindowBorderColor;
-            ActiveWindowBorderColor = settings.ActiveWindowBorderColor;
-            DesktopBorderStyle = settings.DesktopBorderStyle == 1 ? BorderStyle.Underline : BorderStyle.Box;
-
-            PrimaryUpdateDelay = settings.PrimaryUpdateDelay;
-            SecondaryUpdateDelay = settings.SecondaryUpdateDelay;
-            ShowAppInTaskbar = settings.ShowAppInTaskbar;
-            ShowInTaskbar = ShowAppInTaskbar;
-
-            WindowRenderMode = settings.RenderMode == 1 ? RenderMode.Icons : RenderMode.Windows;
-
-            BackColor = BackgroundColor;
-            Opacity = BackgroundOpacity;
-
-            if (persist)
-            {
-                AppSettingsStore.Save(settings);
-                ResetVirtualDesktop();
-                Invalidate();
             }
         }
 

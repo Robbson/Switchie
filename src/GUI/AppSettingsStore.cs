@@ -3,7 +3,7 @@ using System;
 using System.Drawing;
 using System.Globalization;
 
-namespace Switchie
+namespace Switchie.GUI
 {
     public static class AppSettingsStore
     {
@@ -16,8 +16,8 @@ namespace Switchie
             {
                 return key == null ? defaults : new AppSettings
                 {
-                    RenderMode = ReadInt(key, "RenderMode", defaults.RenderMode),
-                    DesktopBorderStyle = ReadInt(key, "DesktopBorderStyle", defaults.DesktopBorderStyle),
+                    DesktopModeDefault = (DesktopMode)ReadInt(key, "DesktopModeDefault", (int)defaults.DesktopModeDefault),
+                    DesktopBorderStyle = (BorderStyle)ReadInt(key, "DesktopBorderStyle", (int)defaults.DesktopBorderStyle),
                     BackgroundOpacity = ReadDouble(key, "BackgroundOpacity", defaults.BackgroundOpacity),
                     PagerHeight = ReadInt(key, "PagerHeight", defaults.PagerHeight),
                     PaddingSize = ReadInt(key, "PaddingSize", defaults.PaddingSize),
@@ -46,7 +46,7 @@ namespace Switchie
             using (RegistryKey key = Registry.CurrentUser.CreateSubKey(RegistryKeyPath))
             {
                 if (key == null) return;
-                key.SetValue("RenderMode", settings.RenderMode, RegistryValueKind.DWord);
+                key.SetValue("DesktopModeDefault", settings.DesktopModeDefault, RegistryValueKind.DWord);
                 key.SetValue("DesktopBorderStyle", settings.DesktopBorderStyle, RegistryValueKind.DWord);
                 key.SetValue("BackgroundOpacity", settings.BackgroundOpacity.ToString(CultureInfo.InvariantCulture), RegistryValueKind.String);
                 key.SetValue("PagerHeight", settings.PagerHeight, RegistryValueKind.DWord);

@@ -5,29 +5,19 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace Switchie
+namespace Switchie.GUI
 {
     // Represents a virtual desktop mini view in the pager
     public class VirtualDesktop
     {
+        private DragDropData _dragDropData;
+        private Rectangle dragBoxFromMouseDown;
+        private readonly List<VirtualDesktopScreen> _screens = new List<VirtualDesktopScreen>();
+
         public MainForm Form { get; set; }
         public Size Size { get; set; }
         public Point Location { get; set; }
-
         public int VirtualDesktopIndex { get; set; }
-        private readonly List<VirtualDesktopScreen> _screens = new List<VirtualDesktopScreen>();
-        public bool IsCurrentActiveDesktop
-        {
-            get => WindowsVirtualDesktopManager.GetInstance().FromDesktop(WindowsVirtualDesktop.GetInstance().Current) == VirtualDesktopIndex;
-        }
-
-        private DragDropData _dragDropData;
-        private Rectangle dragBoxFromMouseDown;
-
-        private bool IsInsideBounds(Point p) => IsInsideBounds(p.X, p.Y);
-
-        private bool IsInsideBounds(int x, int y)
-            => x >= Location.X && x < (Location.X + Size.Width) && y >= Location.Y && y < (Location.Y + Size.Height);
 
         public VirtualDesktop(int virtualDesktopIndex, MainForm form, Point location)
         {
@@ -45,34 +35,9 @@ namespace Switchie
                     VirtualDesktop = this,
                     AttachedScreen = screen,
                     Location = new Point(location.X + _screens.Sum(x => x.Size.Width), location.Y),
-                    Size = Helpers.AspectRatioResize(new Size(screen.Bounds.Width, screen.Bounds.Height), 0, Form.PagerHeight)
+                    Size = Helpers.AspectRatioResize(new Size(screen.Bounds.Width, screen.Bounds.Height), 0, Form.Options.PagerHeight)
                 });
-            Size = new Size(_screens.Sum(x => x.Size.Width), Form.PagerHeight);
-        }
-
-        private Window GetWindowUnderCursor(Point mousePosition)
-        {
-            var coord = Form.PointToClient(mousePosition);
-            var visibleWindows = Form.Windows
-                .Where(x => x.VirtualDesktopIndex == VirtualDesktopIndex && !WinAPI.IsIconic(x.Handle));
-
-            // For windows render mode, we search across all screens for the clicked window in z-order from front to back,
-            // otherwise order should stay the same (using process id & handle)
-            var windows = Form.WindowRenderMode == MainForm.RenderMode.Windows
-                ? visibleWindows.OrderByDescending(x => x.ZOrder)
-                : visibleWindows
-                    .OrderBy(x => x.ProcessID)
-                    .ThenBy(x => x.Handle.ToInt64());
-
-            foreach (var w in windows)
-            {
-                if (_screens.Any(x => x.WindowAreas.ContainsKey(w.Handle) && x.WindowAreas[w.Handle].Contains(mousePosition)))
-                    if (_screens.Select(x => x.AttachedScreen.DeviceName).Contains(Screen.FromHandle(w.Handle).DeviceName))
-                    {
-                        return w;
-                    }
-            }
-            return null;
+            Size = new Size(_screens.Sum(x => x.Size.Width), Form.Options.PagerHeight);
         }
 
         public void OnPaint(PaintEventArgs e)
@@ -80,9 +45,9 @@ namespace Switchie
             _screens.ForEach(x => x.OnPaint(e));
 
             Graphics g = e.Graphics;
-            Color desktopBorderColor = IsCurrentActiveDesktop ? Form.ActiveDesktopBorderColor : Form.DesktopBorderColor;
+            Color desktopBorderColor = IsCurrentActiveDesktop ? Form.Options.ActiveDesktopBorderColor : Form.Options.DesktopBorderColor;
 
-            if (Form.DesktopBorderStyle == MainForm.BorderStyle.Box)
+            if (Form.Options.DesktopBorderStyle == BorderStyle.Box)
             {
                 // Draw a border around the active desktop
                 g.DrawRectangle(
@@ -172,6 +137,41 @@ namespace Switchie
             }
             if ((e.AllowedEffect & DragDropEffects.Move) == DragDropEffects.Move)
                 e.Effect = DragDropEffects.Move;
+        }
+
+        public bool IsCurrentActiveDesktop
+        {
+            get => WindowsVirtualDesktopManager.GetInstance().FromDesktop(WindowsVirtualDesktop.GetInstance().Current) == VirtualDesktopIndex;
+        }
+
+        private bool IsInsideBounds(Point p) => IsInsideBounds(p.X, p.Y);
+
+        private bool IsInsideBounds(int x, int y)
+            => x >= Location.X && x < (Location.X + Size.Width) && y >= Location.Y && y < (Location.Y + Size.Height);
+
+        private Window GetWindowUnderCursor(Point mousePosition)
+        {
+            var coord = Form.PointToClient(mousePosition);
+            var visibleWindows = Form.Windows
+                .Where(x => x.VirtualDesktopIndex == VirtualDesktopIndex && !WinAPI.IsIconic(x.Handle));
+
+            // For desktop preview mode, we search across all screens for the clicked window in z-order from front to back,
+            // otherwise order should stay the same (using process id & handle)
+            var windows = Form.Options.DesktopModeDefault == DesktopMode.Preview
+                ? visibleWindows.OrderByDescending(x => x.ZOrder)
+                : visibleWindows
+                    .OrderBy(x => x.ProcessID)
+                    .ThenBy(x => x.Handle.ToInt64());
+
+            foreach (var w in windows)
+            {
+                if (_screens.Any(x => x.WindowAreas.ContainsKey(w.Handle) && x.WindowAreas[w.Handle].Contains(mousePosition)))
+                    if (_screens.Select(x => x.AttachedScreen.DeviceName).Contains(Screen.FromHandle(w.Handle).DeviceName))
+                    {
+                        return w;
+                    }
+            }
+            return null;
         }
     }
 }
