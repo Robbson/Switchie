@@ -12,13 +12,13 @@ namespace Switchie
         public int IconPaddingX { get; set; } = 0;
         public int IconPaddingY { get; set; } = 0;
 
-        public Color BackgroundColor { get; set; } = Color.FromArgb(64, 64, 64);
+        public Color DesktopBackgroundColor { get; set; } = Color.FromArgb(64, 64, 64);
 
         public Color DesktopBorderColor { get; set; } = Color.FromArgb(32, 32, 32);
         public Color ActiveDesktopBorderColor { get; set; } = Color.LightBlue;
 
-        public Color WindowColor { get; set; } = Color.FromArgb(255, Color.Gray);
-        public Color ActiveWindowColor { get; set; } = Color.FromArgb(255, Color.Silver);
+        public Color WindowBackgroundColor { get; set; } = Color.FromArgb(255, Color.Gray);
+        public Color ActiveWindowBackgroundColor { get; set; } = Color.FromArgb(255, Color.Silver);
         public Color WindowBorderColor { get; set; } = Color.Silver;
         public Color ActiveWindowBorderColor { get; set; } = Color.White;
 

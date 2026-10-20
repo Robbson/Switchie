@@ -22,5 +22,4 @@ namespace Switchie
         IWindowsVirtualDesktop Current { get; }
         IWindowsVirtualDesktop FromIndex(int index);
     }
-
 }

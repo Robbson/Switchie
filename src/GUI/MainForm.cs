@@ -505,11 +505,11 @@ namespace Switchie
             IconPaddingY = settings.IconPaddingY;
             BackgroundOpacity = Math.Max(0.25, Math.Min(1.0, settings.BackgroundOpacity));
 
-            BackgroundColor = settings.BackgroundColor;
+            BackgroundColor = settings.DesktopBackgroundColor;
             DesktopBorderColor = settings.DesktopBorderColor;
             ActiveDesktopBorderColor = settings.ActiveDesktopBorderColor;
-            WindowColor = settings.WindowColor;
-            ActiveWindowColor = settings.ActiveWindowColor;
+            WindowColor = settings.WindowBackgroundColor;
+            ActiveWindowColor = settings.ActiveWindowBackgroundColor;
             WindowBorderColor = settings.WindowBorderColor;
             ActiveWindowBorderColor = settings.ActiveWindowBorderColor;
             DesktopBorderStyle = settings.DesktopBorderStyle == 1 ? BorderStyle.Underline : BorderStyle.Box;

@@ -24,13 +24,13 @@ namespace Switchie
                     IconPaddingX = ReadInt(key, "IconPaddingX", defaults.IconPaddingX),
                     IconPaddingY = ReadInt(key, "IconPaddingY", defaults.IconPaddingY),
 
-                    BackgroundColor = ReadColor(key, "BackgroundColor", defaults.BackgroundColor),
+                    DesktopBackgroundColor = ReadColor(key, "DesktopBackgroundColor", defaults.DesktopBackgroundColor),
 
                     DesktopBorderColor = ReadColor(key, "DesktopBorderColor", defaults.DesktopBorderColor),
                     ActiveDesktopBorderColor = ReadColor(key, "ActiveDesktopBorderColor", defaults.ActiveDesktopBorderColor),
 
-                    WindowColor = ReadColor(key, "WindowColor", defaults.WindowColor),
-                    ActiveWindowColor = ReadColor(key, "ActiveWindowColor", defaults.ActiveWindowColor),
+                    WindowBackgroundColor = ReadColor(key, "WindowBackgroundColor", defaults.WindowBackgroundColor),
+                    ActiveWindowBackgroundColor = ReadColor(key, "ActiveWindowBackgroundColor", defaults.ActiveWindowBackgroundColor),
                     WindowBorderColor = ReadColor(key, "WindowBorderColor", defaults.WindowBorderColor),
                     ActiveWindowBorderColor = ReadColor(key, "ActiveWindowBorderColor", defaults.ActiveWindowBorderColor),
 
@@ -54,13 +54,13 @@ namespace Switchie
                 key.SetValue("IconPaddingX", settings.IconPaddingX, RegistryValueKind.DWord);
                 key.SetValue("IconPaddingY", settings.IconPaddingY, RegistryValueKind.DWord);
 
-                key.SetValue("BackgroundColor", settings.BackgroundColor.ToArgb(), RegistryValueKind.DWord);
+                key.SetValue("DesktopBackgroundColor", settings.DesktopBackgroundColor.ToArgb(), RegistryValueKind.DWord);
 
                 key.SetValue("DesktopBorderColor", settings.DesktopBorderColor.ToArgb(), RegistryValueKind.DWord);
                 key.SetValue("ActiveDesktopBorderColor", settings.ActiveDesktopBorderColor.ToArgb(), RegistryValueKind.DWord);
 
-                key.SetValue("WindowColor", settings.WindowColor.ToArgb(), RegistryValueKind.DWord);
-                key.SetValue("ActiveWindowColor", settings.ActiveWindowColor.ToArgb(), RegistryValueKind.DWord);
+                key.SetValue("WindowBackgroundColor", settings.WindowBackgroundColor.ToArgb(), RegistryValueKind.DWord);
+                key.SetValue("ActiveWindowBackgroundColor", settings.ActiveWindowBackgroundColor.ToArgb(), RegistryValueKind.DWord);
                 key.SetValue("WindowBorderColor", settings.WindowBorderColor.ToArgb(), RegistryValueKind.DWord);
                 key.SetValue("ActiveWindowBorderColor", settings.ActiveWindowBorderColor.ToArgb(), RegistryValueKind.DWord);
 
