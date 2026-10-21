@@ -22,7 +22,7 @@ namespace Switchie
                 {
                     Alignment = StringAlignment.Center,
                     LineAlignment = StringAlignment.Center,
-                    FormatFlags = StringFormatFlags.NoWrap
+                    FormatFlags = StringFormatFlags.NoWrap,
                 })
                 {
                     g.DrawString(glyph, font, Brushes.Black, new RectangleF(0, 0, size, size), sf);
@@ -52,12 +52,12 @@ namespace Switchie
             if ((finalHeight == 0) && (finalWidth != 0))
             {
                 iWidth = finalWidth;
-                iHeight = (sz.Height * iWidth / sz.Width);
+                iHeight = sz.Height * iWidth / sz.Width;
             }
             else if ((finalHeight != 0) && (finalWidth == 0))
             {
                 iHeight = finalHeight;
-                iWidth = (sz.Width * iHeight / sz.Height);
+                iWidth = sz.Width * iHeight / sz.Height;
             }
             else
             {

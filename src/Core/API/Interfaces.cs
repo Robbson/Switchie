@@ -2,7 +2,6 @@ using System;
 
 namespace Switchie
 {
-
     public interface IIVirtualDesktop { }
 
     public interface IWindowsVirtualDesktopManager

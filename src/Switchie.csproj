@@ -2,20 +2,20 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net4.8</TargetFramework>
+    <TargetFramework>net48</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
-    <UseWPF>true</UseWPF>
-    <Version>1.4.4</Version>
-    <BuildNumber Condition="'$(BuildNumber)' == ''">$([System.DateTime]::UtcNow.ToString("yyDDD"))</BuildNumber>
-    <AssemblyVersion>$(Version).0</AssemblyVersion>
-    <FileVersion>$(Version).$(BuildNumber)</FileVersion>
-    <InformationalVersion>$(Version)+b$(BuildNumber)</InformationalVersion>
+    <UseWPF>true</UseWPF>		
     <PlatformTarget>x64</PlatformTarget>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <ApplicationIcon>Resources/icon.ico</ApplicationIcon>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
+	<Target Name="IncrementVersion" BeforeTargets="BeforeBuild">
+    <Exec Command="powershell -ExecutionPolicy Bypass -File IncrementVersion.ps1" />
+	</Target>
+	
   <ItemGroup>
     <Content Remove="Resources/icon.ico" />
     <Content Remove="Resources/icon.png" />
@@ -24,6 +24,21 @@
   <ItemGroup>
     <EmbeddedResource Include="Resources/icon.ico" />
     <EmbeddedResource Include="Resources/icon.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EditorConfigFiles Remove="C:\dev\Switchie\src\GUI\.editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="C:\dev\Switchie\src\.editorconfig" />
   </ItemGroup>
 
 </Project>

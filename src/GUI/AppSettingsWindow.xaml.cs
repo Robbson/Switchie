@@ -1,10 +1,10 @@
-using Switchie.GUI;
 using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.Reflection.Emit;
 using System.Windows;
 using System.Windows.Controls;
+using Switchie.GUI;
 using DrawingColor = System.Drawing.Color;
 using Forms = System.Windows.Forms;
 
@@ -12,6 +12,9 @@ namespace Switchie
 {
     public partial class AppSettingsWindow : System.Windows.Window
     {
+        private readonly AppSettings _defaults = new AppSettings();
+        private readonly AppSettings _settingsBefore;
+
         private DrawingColor _desktopBackgroundColor;
         private DrawingColor _desktopBorderColor;
         private DrawingColor _activeDesktopBorderColor;
@@ -20,27 +23,20 @@ namespace Switchie
         private DrawingColor _windowBorderColor;
         private DrawingColor _activeWindowBorderColor;
 
-        private readonly AppSettings _defaults = new AppSettings();
-        private readonly AppSettings _settingsBefore;
-
-        public AppSettings Settings { get; private set; }
-        public event Action<AppSettings> PreviewChanged;
-
         public AppSettingsWindow(AppSettings settings)
         {
             InitializeComponent();
 
             _settingsBefore = AppSettings.Clone(settings);
             Settings = AppSettings.Clone(settings);
-            //Settings = settings;
 
             cmbDesktopModeDefault.Items.Add("Windows");
             cmbDesktopModeDefault.Items.Add("Icons");
             cmbDesktopModeDefault.SelectedIndex = (int)Settings.DesktopModeDefault; //Math.Max(0, Math.Min(1, Settings.DesktopModeDefault));
-            txtPagerHeight.Text = Settings.PagerHeight.ToString(CultureInfo.InvariantCulture);
-            txtPaddingSize.Text = Settings.PaddingSize.ToString(CultureInfo.InvariantCulture);
-            txtIconPaddingX.Text = Settings.IconPaddingX.ToString(CultureInfo.InvariantCulture);
-            txtIconPaddingY.Text = Settings.IconPaddingY.ToString(CultureInfo.InvariantCulture);
+            numericPagerHeight.Value = Settings.PagerHeight;
+            numericPaddingSize.Value = Settings.PaddingSize;
+            numericIconPaddingX.Value = Settings.IconPaddingX;
+            numericIconPaddingY.Value = Settings.IconPaddingY;
 
             if (sldBackgroundOpacity != null)
             {
@@ -69,15 +65,21 @@ namespace Switchie
             UpdateRevertButtons();
         }
 
+        public event Action<AppSettings> PreviewChanged;
+
+        public AppSettings Settings { get; private set; }
+
+
+
         private void ResetToDefaults_Click(object sender, RoutedEventArgs e)
         {
             if (tabControl.SelectedIndex == 0)
             {
                 cmbDesktopModeDefault.SelectedIndex = _defaults.DesktopModeDefault <= 0 ? 0 : 1;
-                txtPagerHeight.Text = _defaults.PagerHeight.ToString(CultureInfo.InvariantCulture);
-                txtPaddingSize.Text = _defaults.PaddingSize.ToString(CultureInfo.InvariantCulture);
-                txtIconPaddingX.Text = _defaults.IconPaddingX.ToString(CultureInfo.InvariantCulture);
-                txtIconPaddingY.Text = _defaults.IconPaddingY.ToString(CultureInfo.InvariantCulture);
+                numericPagerHeight.Value = _defaults.PagerHeight;
+                numericPaddingSize.Value = _defaults.PaddingSize;
+                numericIconPaddingX.Value = _defaults.IconPaddingX;
+                numericIconPaddingY.Value = _defaults.IconPaddingY;
             }
             else if (tabControl.SelectedIndex == 1)
             {
@@ -85,6 +87,7 @@ namespace Switchie
                 {
                     sldBackgroundOpacity.Value = Math.Max(0.25, Math.Min(1.0, _defaults.BackgroundOpacity));
                 }
+
                 cmbDesktopBorderStyle.SelectedIndex = _defaults.DesktopBorderStyle <= 0 ? 0 : 1;
                 _desktopBackgroundColor = _defaults.DesktopBackgroundColor;
                 _desktopBorderColor = _defaults.DesktopBorderColor;
@@ -115,32 +118,7 @@ namespace Switchie
         {
             // Because initial (not) set values can trigger previews with invalid values
             if (!IsLoaded) return null;
-
-            // Validation first
-            if (!TryParsePositiveInt(txtPagerHeight.Text, 1, out int pagerHeight))
-            {
-                ShowValidationError("Pager Height must be a positive number.");
-                return null;
-            }
-
-            if (!TryParsePositiveInt(txtPaddingSize.Text, 0, out int paddingSize))
-            {
-                ShowValidationError("Padding Size must be 0 or greater.");
-                return null;
-            }
-
-            if (!TryParseInt(txtIconPaddingX.Text, out int iconPaddingX))
-            {
-                ShowValidationError("Icon Padding X must be a valid whole number.");
-                return null;
-            }
-
-            if (!TryParseInt(txtIconPaddingY.Text, out int iconPaddingY))
-            {
-                ShowValidationError("Icon Padding Y must be a valid whole number.");
-                return null;
-            }
-
+         
             if (!TryParsePositiveInt(txtPrimaryDelay.Text, 1, out int primaryDelay))
             {
                 ShowValidationError("Primary Update Delay must be at least 1 ms.");
@@ -156,10 +134,10 @@ namespace Switchie
             return new AppSettings
             {
                 DesktopModeDefault = (DesktopMode)(cmbDesktopModeDefault.SelectedIndex <= 0 ? 0 : 1),
-                PagerHeight = pagerHeight,
-                PaddingSize = paddingSize,
-                IconPaddingX = iconPaddingX,
-                IconPaddingY = iconPaddingY,
+                PagerHeight = numericPagerHeight.Value,
+                PaddingSize = numericPaddingSize.Value,
+                IconPaddingX = numericIconPaddingX.Value,
+                IconPaddingY = numericIconPaddingY.Value,
 
                 BackgroundOpacity = sldBackgroundOpacity == null
                     ? Math.Max(0.25, Math.Min(1.0, _defaults.BackgroundOpacity))
@@ -209,10 +187,10 @@ namespace Switchie
             }
 
             btnRevertDesktopModeDefault.Visibility = cmbDesktopModeDefault.SelectedIndex != (int)_settingsBefore.DesktopModeDefault ? Visibility.Visible : Visibility.Hidden;
-            btnRevertPagerHeight.Visibility = IsDifferent(txtPagerHeight.Text, _settingsBefore.PagerHeight) ? Visibility.Visible : Visibility.Hidden;
-            btnRevertPaddingSize.Visibility = IsDifferent(txtPaddingSize.Text, _settingsBefore.PaddingSize) ? Visibility.Visible : Visibility.Hidden;
-            btnRevertIconPaddingX.Visibility = IsDifferent(txtIconPaddingX.Text, _settingsBefore.IconPaddingX) ? Visibility.Visible : Visibility.Hidden;
-            btnRevertIconPaddingY.Visibility = IsDifferent(txtIconPaddingY.Text, _settingsBefore.IconPaddingY) ? Visibility.Visible : Visibility.Hidden;
+            btnRevertPagerHeight.Visibility = numericPagerHeight.Value != _settingsBefore.PagerHeight ? Visibility.Visible : Visibility.Hidden;
+            btnRevertPaddingSize.Visibility = numericPaddingSize.Value != _settingsBefore.PaddingSize ? Visibility.Visible : Visibility.Hidden;
+            btnRevertIconPaddingX.Visibility = numericIconPaddingX.Value != _settingsBefore.IconPaddingX ? Visibility.Visible : Visibility.Hidden;
+            btnRevertIconPaddingY.Visibility = numericIconPaddingY.Value != _settingsBefore.IconPaddingY ? Visibility.Visible : Visibility.Hidden;
 
             btnRevertBackgroundOpacity.Visibility = IsDifferent(sldBackgroundOpacity.Value, _settingsBefore.BackgroundOpacity) ? Visibility.Visible : Visibility.Hidden;
             btnRevertDesktopBorderStyle.Visibility = cmbDesktopBorderStyle.SelectedIndex != (int)_settingsBefore.DesktopBorderStyle ? Visibility.Visible : Visibility.Hidden;
@@ -270,7 +248,7 @@ namespace Switchie
         }
 
         // THIS is very special because it needs recalulation in the MainFrame
-        private void PagerHeightChanged(object sender, TextChangedEventArgs e)
+        private void PagerHeightChanged(object sender, RoutedPropertyChangedEventArgs<int> e)
         {
             UpdateRevertButtons();
             //TODO: Preview Suppoer with those notices from AI help
@@ -278,12 +256,12 @@ namespace Switchie
 
         private void RevertPagerHeight_Click(object sender, RoutedEventArgs e)
         {
-            txtPagerHeight.Text = _settingsBefore.PagerHeight.ToString(CultureInfo.InvariantCulture);
+            numericPagerHeight.Value = _settingsBefore.PagerHeight;
             UpdateRevertButtons();
         }
 
         // For: PaddingSize, IconPaddingX and IconPaddingY
-        private void PaddingInputChanged(object sender, TextChangedEventArgs e)
+        private void PaddingInputChanged(object sender, RoutedPropertyChangedEventArgs<int> e)
         {
             UpdateRevertButtons();
             RequestPreview();
@@ -291,19 +269,19 @@ namespace Switchie
 
         private void RevertPaddingSize_Click(object sender, RoutedEventArgs e)
         {
-            txtPaddingSize.Text = _settingsBefore.PaddingSize.ToString(CultureInfo.InvariantCulture);
+            numericPaddingSize.Value = _settingsBefore.PaddingSize;
             UpdateRevertButtons();
         }
 
         private void RevertIconPaddingX_Click(object sender, RoutedEventArgs e)
         {
-            txtIconPaddingX.Text = _settingsBefore.IconPaddingX.ToString(CultureInfo.InvariantCulture);
+            numericIconPaddingX.Value = _settingsBefore.IconPaddingX;
             UpdateRevertButtons();
         }
 
         private void RevertIconPaddingY_Click(object sender, RoutedEventArgs e)
         {
-            txtIconPaddingY.Text = _settingsBefore.IconPaddingY.ToString(CultureInfo.InvariantCulture);
+            numericIconPaddingY.Value = _settingsBefore.IconPaddingY;
             UpdateRevertButtons();
         }
         #endregion
@@ -489,4 +467,3 @@ namespace Switchie
         #endregion
     }
 }
-

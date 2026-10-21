@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Runtime;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Interop;
@@ -16,29 +13,20 @@ namespace Switchie.GUI
     // Pager main application form
     public class MainForm : Form
     {
+        public ConcurrentBag<Window> Windows = new ConcurrentBag<Window>();
+
         private readonly string version =
             typeof(MainForm).Assembly.GetName().Version?.ToString(3)
             ?? Application.ProductVersion;
 
-        // --- Internal Application State (TODO: Refactor, what should be really public?) ---
+        // --- Internal Application State ---
+        private readonly List<VirtualDesktop> _virtualDesktops = new List<VirtualDesktop>();
         private bool _isAppPinned = false;
-        //private bool _forceAppAlwaysOnTop = false;
-
         private int _activeDesktopIndex = 0;
         private int _currentDesktopCount = 0;
-
         private string _windowsHash = string.Empty;
-        public ConcurrentBag<Window> Windows = new ConcurrentBag<Window>();
-        private readonly List<VirtualDesktop> _virtualDesktops = new List<VirtualDesktop>();
 
         private Point dragOffset;
-        public bool IsDraggingWindow { get; set; }
-
-        // Why property?
-        public int BorderSize { get; } = 1;
-
-        // Application Options: Configurable by user
-        public AppSettings Options { get; private set; }
 
         public MainForm()
         {
@@ -89,11 +77,33 @@ namespace Switchie.GUI
             MouseMove += OnMouseMove;
         }
 
+        public bool IsDraggingWindow { get; set; }
+
+        // Why property?
+        public int BorderSize { get; } = 1;
+
+        // Application Options: Configurable by user
+        public AppSettings Options { get; private set; }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+            try
+            {
+                _virtualDesktops.ForEach(x => x.OnPaint(e));
+            }
+            catch
+            {
+                // TODO: Check, if we run into issues when render target is gone
+                WindowsVirtualDesktop.Restart();
+                WindowsVirtualDesktopManager.Restart();
+            }
+        }
+
         // Default app window location: Centered and above Taskbar
         private Point GetDefaultLocation() => new Point(
                 (Screen.PrimaryScreen.Bounds.Width / 2) - (Size.Width / 2),
-                Screen.PrimaryScreen.WorkingArea.Bottom - Size.Height
-        );
+                Screen.PrimaryScreen.WorkingArea.Bottom - Size.Height);
 
         // App Window covering detection: Currently only by its center point
         private bool IsCovered()
@@ -102,7 +112,7 @@ namespace Switchie.GUI
             var point = new WinAPI.POINT
             {
                 X = rect.Left + rect.Width / 2,
-                Y = rect.Top + rect.Height / 2
+                Y = rect.Top + rect.Height / 2,
             };
             var hwndAtPoint = WinAPI.WindowFromPoint(point);
             return hwndAtPoint != this.Handle;
@@ -174,9 +184,9 @@ namespace Switchie.GUI
                             $"{Windows.Sum(x => Math.Abs(x.Dimensions.Y))}" +
                             $"{Windows.Sum(x => x.Dimensions.Width)}" +
                             $"{Windows.Sum(x => x.Dimensions.Height)}" +
-                            $"{string.Join("", Windows.Select(x => x.IsActive ? 1 : 0))}" +
-                            $"{string.Join("", Windows.Select(x => WinAPI.GetForegroundWindow() == x.Handle ? 1 : 0))}" +
-                            $"{string.Join("", Windows.Select(x => x.VirtualDesktopIndex))}";
+                            $"{string.Join(string.Empty, Windows.Select(x => x.IsActive ? 1 : 0))}" +
+                            $"{string.Join(string.Empty, Windows.Select(x => WinAPI.GetForegroundWindow() == x.Handle ? 1 : 0))}" +
+                            $"{string.Join(string.Empty, Windows.Select(x => x.VirtualDesktopIndex))}";
 
                             if (hash != _windowsHash)
                             {
@@ -184,7 +194,9 @@ namespace Switchie.GUI
                                 Invalidate();
                             }
                         }
-                        catch { }
+                        catch
+                        {
+                        }
                     }));
 
                     // So we don't waste too many CPU cycles
@@ -194,14 +206,14 @@ namespace Switchie.GUI
 
             // Secondary application loop for pinning the app, bringing it to front when hidden by some other window
             // and detect desktop count changes
-            // -> only pinned apps are visible on all virtual desktops, which is a requirement for this app 
+            // -> only pinned apps are visible on all virtual desktops, which is a requirement for this app
             Task.Run(async () =>
             {
                 while (!Program.ApplicationClosing.IsCancellationRequested)
                 {
                     Invoke(new Action(() =>
                     {
-                        // Check if window is covered shoulf be fine with every 500ms 
+                        // Check if window is covered shoulf be fine with every 500ms
                         if (IsCovered())
                         {
                             WindowManager.RestoreWindow(Handle);
@@ -226,8 +238,11 @@ namespace Switchie.GUI
                                 WindowsVirtualDesktopManager.GetInstance().PinApplication(Handle);
                                 _isAppPinned = true;
                             }
-                            catch { }
+                            catch
+                            {
+                            }
                         }
+
                         try
                         {
                             _activeDesktopIndex = WindowsVirtualDesktopManager.GetInstance()
@@ -235,7 +250,9 @@ namespace Switchie.GUI
                             Windows = new ConcurrentBag<Window>(WindowManager.GetOpenWindows());
                             //Invalidate();
                         }
-                        catch { }
+                        catch
+                        {
+                        }
                     }));
                     await Task.Delay(Options.SecondaryUpdateDelay);
                 }
@@ -279,7 +296,7 @@ namespace Switchie.GUI
                  new ToolStripMenuItem()
                  {
                      Text = "Toggle Desktop Mode",
-                     Image = Helpers.CreateGlyphBitmap("↔")
+                     Image = Helpers.CreateGlyphBitmap("↔"),
                  },
                  () =>
                  {
@@ -293,7 +310,7 @@ namespace Switchie.GUI
             ToolStripMenuItem positionMenu = new ToolStripMenuItem()
             {
                 Text = "Position",
-                Image = Helpers.CreateGlyphBitmap("⌖")
+                Image = Helpers.CreateGlyphBitmap("⌖"),
             };
 
             ToolStripMenuItem buttonRestorePos = new ToolStripMenuItem("Restore", null, (s, ev) =>
@@ -323,7 +340,7 @@ namespace Switchie.GUI
                 new ToolStripMenuItem()
                 {
                     Text = "Settings",
-                    Image = Helpers.CreateGlyphBitmap("⚙")
+                    Image = Helpers.CreateGlyphBitmap("⚙"),
                 },
                 () =>
                 {
@@ -334,7 +351,7 @@ namespace Switchie.GUI
                 new ToolStripMenuItem()
                 {
                     Text = "About",
-                    Image = Helpers.CreateGlyphBitmap("ℹ")
+                    Image = Helpers.CreateGlyphBitmap("ℹ"),
                 },
                 () =>
                 {
@@ -346,7 +363,7 @@ namespace Switchie.GUI
                 new ToolStripMenuItem()
                 {
                     Text = "Exit",
-                    Image = Helpers.CreateGlyphBitmap("✕")
+                    Image = Helpers.CreateGlyphBitmap("✕"),
                 },
                 () =>
                 {
@@ -378,7 +395,7 @@ namespace Switchie.GUI
             }
         }
 
-        public void PreviewSettings(AppSettings settings)
+        private void PreviewSettings(AppSettings settings)
         {
             ApplySettings(settings, false);
 
@@ -426,7 +443,7 @@ namespace Switchie.GUI
                 {
                     Size = new Size(96, 96),
                     SizeMode = PictureBoxSizeMode.Zoom,
-                    Location = new Point((aboutDialog.ClientSize.Width - 96) / 2, 20)
+                    Location = new Point((aboutDialog.ClientSize.Width - 96) / 2, 20),
                 };
 
                 try
@@ -451,7 +468,7 @@ namespace Switchie.GUI
                     Location = new Point(0, 126),
                     TextAlign = ContentAlignment.MiddleCenter,
                     Font = new Font("Segoe UI", 16, FontStyle.Bold),
-                    Text = "Switchie"
+                    Text = "Switchie",
                 };
 
                 var versionLabel = new Label
@@ -463,7 +480,7 @@ namespace Switchie.GUI
                     TextAlign = ContentAlignment.MiddleCenter,
                     Font = new Font("Segoe UI", 10, FontStyle.Regular),
                     ForeColor = Color.DimGray,
-                    Text = $"Version {version}"
+                    Text = $"Version {version}",
                 };
 
                 var authorLabel = new Label
@@ -474,7 +491,7 @@ namespace Switchie.GUI
                     Location = new Point(20, 202),
                     TextAlign = ContentAlignment.MiddleLeft,
                     Font = new Font("Segoe UI", 9, FontStyle.Bold),
-                    Text = "Main author: darkguy2008"
+                    Text = "Main author: darkguy2008",
                 };
 
                 var contributorsLabel = new Label
@@ -486,7 +503,7 @@ namespace Switchie.GUI
                     TextAlign = ContentAlignment.TopLeft,
                     Font = new Font("Segoe UI", 9, FontStyle.Regular),
                     Text = "Contributors:\n• Robbson" +
-                           "\n• DARKGuy (Alemar)"
+                           "\n• DARKGuy (Alemar)",
                 };
 
                 var closeButton = new Button
@@ -495,7 +512,7 @@ namespace Switchie.GUI
                     Width = 100,
                     Height = 30,
                     Location = new Point((aboutDialog.ClientSize.Width - 100) / 2, 298),
-                    DialogResult = DialogResult.OK
+                    DialogResult = DialogResult.OK,
                 };
 
                 aboutDialog.AcceptButton = closeButton;
@@ -509,21 +526,6 @@ namespace Switchie.GUI
                 aboutDialog.Controls.Add(closeButton);
 
                 aboutDialog.ShowDialog(this);
-            }
-        }
-
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            base.OnPaint(e);
-            try
-            {
-                _virtualDesktops.ForEach(x => x.OnPaint(e));
-            }
-            catch
-            {
-                // TODO: Check, if we run into issues when render target is gone
-                WindowsVirtualDesktop.Restart();
-                WindowsVirtualDesktopManager.Restart();
             }
         }
     }

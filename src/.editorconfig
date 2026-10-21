@@ -1,0 +1,62 @@
+# Remove the line below if you want to inherit .editorconfig settings from higher directories
+root = true
+
+# C# files
+[*.cs]
+
+#### Core EditorConfig Options ####
+
+# Indentation and spacing
+indent_size = 4
+indent_style = space
+tab_width = 4
+
+#### Universal Roslyn-Analyzer Rules ####
+
+# --- 1. Prefixes and Redundancy ---
+# Rule SA1101: Prefix local calls with this
+# Disabling this stops StyleCop from forcing 'this.' on every instance member.
+dotnet_diagnostic.SA1101.severity = none
+
+# Rule SA1309: Field names should not begin with underscore
+# Disabling this allows the modern .NET convention of using an underscore (e.g., _myField) for private fields.
+dotnet_diagnostic.SA1309.severity = none
+
+# --- 2. XML Documentation Requirements ---
+# Rule SA1600: Elements should be documented
+# Disabling this stops StyleCop from requiring XML documentation (/// <summary>) for every single method, property, and field.
+dotnet_diagnostic.SA1600.severity = none
+
+# Rule SA1633: File should have header
+# Disabling this removes the requirement for a standardized file header (like copyright notices) at the top of every file.
+dotnet_diagnostic.SA1633.severity = none
+
+# --- 3. Placement and Layout ---
+# Rule SA1200: Using directives should be placed correctly
+# Disabling this allows you to place 'using' statements outside the namespace block (at the very top of the file), which fits modern C# file-scoped namespaces.
+dotnet_diagnostic.SA1200.severity = none
+
+# Rule SA1516: Elements should be separated by blank line
+# Disabling this allows you to group short, related properties (like auto-properties) together without forcing an empty line between them.
+dotnet_diagnostic.SA1516.severity = none
+
+# Rule SA1124: Do not use regions
+# Disabling this allows the use of '#region' blocks again, if your team prefers using them to organize large files.
+dotnet_diagnostic.SA1124.severity = none
+
+# No XML-Dokumentation für Partial Classes
+dotnet_diagnostic.SA1601.severity = none
+
+# Some useless comment rules
+dotnet_diagnostic.SA1512.severity = none
+dotnet_diagnostic.SA1515.severity = none
+dotnet_diagnostic.SA1005.severity = none
+
+# No parameter restrictions regarding all in one line or all in separate lines
+dotnet_diagnostic.SA1117.severity = none
+
+# Putting every combined math expression in brackets is annoying 
+dotnet_diagnostic.SA1407.severity = none
+
+# I like ommiting brackets, especially when new line for each { is standard
+dotnet_diagnostic.SA1503.severity = none

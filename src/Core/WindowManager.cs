@@ -108,7 +108,5 @@ namespace Switchie
             while ((hWnd = WinAPI.GetWindow(hWnd, WinAPI.GW_HWNDNEXT)) != IntPtr.Zero) zOrder++;
             return zOrder;
         }
-
-        
     }
 }

@@ -52,7 +52,7 @@ namespace Switchie.GUI
                 // Draw a border around the active desktop
                 g.DrawRectangle(
                     new Pen(new SolidBrush(desktopBorderColor), Form.BorderSize),
-                    new Rectangle(Location.X, Location.Y, Size.Width - (Form.BorderSize), Size.Height - (Form.BorderSize))
+                    new Rectangle(Location.X, Location.Y, Size.Width - Form.BorderSize, Size.Height - Form.BorderSize)
                 );
             }
             else
@@ -95,7 +95,7 @@ namespace Switchie.GUI
                     _dragDropData = new DragDropData()
                     {
                         OriginDesktopIndex = VirtualDesktopIndex,
-                        DraggedWindow = w
+                        DraggedWindow = w,
                     };
                     Size dragSize = SystemInformation.DragSize;
                     dragBoxFromMouseDown = new Rectangle(
@@ -171,6 +171,7 @@ namespace Switchie.GUI
                         return w;
                     }
             }
+            
             return null;
         }
     }

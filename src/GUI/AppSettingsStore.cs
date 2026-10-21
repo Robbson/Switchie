@@ -1,7 +1,7 @@
-using Microsoft.Win32;
 using System;
 using System.Drawing;
 using System.Globalization;
+using Microsoft.Win32;
 
 namespace Switchie.GUI
 {
@@ -36,7 +36,7 @@ namespace Switchie.GUI
 
                     PrimaryUpdateDelay = ReadInt(key, "PrimaryUpdateDelay", defaults.PrimaryUpdateDelay),
                     SecondaryUpdateDelay = ReadInt(key, "SecondaryUpdateDelay", defaults.SecondaryUpdateDelay),
-                    ShowAppInTaskbar = ReadInt(key, "ShowAppInTaskbar", defaults.ShowAppInTaskbar ? 1 : 0) == 1
+                    ShowAppInTaskbar = ReadInt(key, "ShowAppInTaskbar", defaults.ShowAppInTaskbar ? 1 : 0) == 1,
                 };
             }
         }
