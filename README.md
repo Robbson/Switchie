@@ -1,4 +1,5 @@
-<img src="src/Resources/icon.png" width="200">
+> [!NOTE]
+> This fork is no longer maintained as development has shifted to its successor, **Micro Task Pager**, which you can find in [this repository](https://github.com/Robbson/micro-task-pager).
 
 # Switchie
 Switchie is a virtual desktop pager for Windows inspired by various Linux-based virtual desktop pagers
